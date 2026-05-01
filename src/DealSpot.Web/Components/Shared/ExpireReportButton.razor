@@ -1,0 +1,32 @@
+@using DealSpot.Application.Deals.ExpireDeal
+@using MediatR
+@inject ISender Mediator
+@rendermode InteractiveServer
+
+<div class="expire-report">
+    @if (_reported)
+    {
+        <span class="expire-report__confirmed">✓ Thanks for reporting — we'll check this deal.</span>
+    }
+    else
+    {
+        <button class="btn-expired" @onclick="ReportExpiredAsync" disabled="@_loading">
+            @(_loading ? "Reporting..." : "⚠️ Deal Expired?")
+        </button>
+    }
+</div>
+
+@code {
+    [Parameter, EditorRequired] public Guid DealId { get; set; }
+
+    private bool _loading;
+    private bool _reported;
+
+    private async Task ReportExpiredAsync()
+    {
+        _loading = true;
+        var result = await Mediator.Send(new ReportDealExpiredCommand(DealId));
+        _reported = result.IsSuccess;
+        _loading = false;
+    }
+}

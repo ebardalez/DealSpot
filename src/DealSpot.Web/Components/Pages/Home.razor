@@ -1,0 +1,88 @@
+@page "/"
+@using DealSpot.Application.Abstractions.Tenancy
+@using DealSpot.Application.Deals.GetDeals
+@using MediatR
+@inject ITenantContext TenantContext
+@inject ISender Mediator
+@attribute [Microsoft.AspNetCore.OutputCaching.OutputCache(PolicyName = "CategoryPage")]
+@attribute [StreamRendering]
+
+<PageTitle>@TenantContext.Current.Name — Best Deals Today</PageTitle>
+
+<HeadContent>
+    <meta name="description" content="@TenantContext.Current.Branding.MetaDescription" />
+    <meta name="keywords" content="@TenantContext.Current.Branding.MetaKeywords" />
+    <meta property="og:title" content="@TenantContext.Current.Name — Best Deals Today" />
+    <meta property="og:description" content="@TenantContext.Current.Branding.MetaDescription" />
+    <link rel="canonical" href="https://@TenantContext.Current.Domain/" />
+
+    @if (_deals is not null)
+    {
+        <script type="application/ld+json">
+        {
+            "@@context": "https://schema.org",
+            "@@type": "ItemList",
+            "name": "Latest Deals on @TenantContext.Current.Name",
+            "itemListElement": [
+                @for (int i = 0; i < _deals.Deals.Count; i++)
+                {
+                    var deal = _deals.Deals[i];
+                    var comma = i < _deals.Deals.Count - 1 ? "," : "";
+                    @($@"{{
+                        ""@@type"": ""ListItem"",
+                        ""position"": {i + 1},
+                        ""item"": {{
+                            ""@@type"": ""Product"",
+                            ""name"": ""{deal.Title}"",
+                            ""offers"": {{
+                                ""@@type"": ""Offer"",
+                                ""price"": ""{deal.CurrentPrice}"",
+                                ""priceCurrency"": ""{deal.Currency}"",
+                                ""availability"": ""https://schema.org/InStock"",
+                                ""url"": ""https://{TenantContext.Current.Domain}/deals/{deal.Slug}""
+                            }}
+                        }}
+                    }}{comma}")
+                }
+            ]
+        }
+        </script>
+    }
+</HeadContent>
+
+<section class="deals-feed">
+    <h1>🔥 Today's Best Deals</h1>
+
+    @if (_deals is null)
+    {
+        <div class="deals-grid">
+            @for (int i = 0; i < 12; i++)
+            {
+                <div class="deal-card deal-card--skeleton"></div>
+            }
+        </div>
+    }
+    else if (!_deals.Deals.Any())
+    {
+        <p class="empty-state">No deals yet — check back soon!</p>
+    }
+    else
+    {
+        <div class="deals-grid">
+            @foreach (var deal in _deals.Deals)
+            {
+                <DealCard Deal="deal" />
+            }
+        </div>
+    }
+</section>
+
+@code {
+    private GetDealsResponse? _deals;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var result = await Mediator.Send(new GetDealsQuery(TenantContext.Current.Id, null, 1, 24));
+        if (result.IsSuccess) _deals = result.Value;
+    }
+}

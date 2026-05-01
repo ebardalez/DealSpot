@@ -1,0 +1,135 @@
+@page "/deals/{slug}"
+@using DealSpot.Application.Abstractions.Tenancy
+@using DealSpot.Application.Deals.GetDeals
+@using MediatR
+@inject ITenantContext TenantContext
+@inject ISender Mediator
+@inject NavigationManager Nav
+@attribute [Microsoft.AspNetCore.OutputCaching.OutputCache(PolicyName = "DealPage")]
+
+@if (_deal is null)
+{
+    <p>Loading...</p>
+}
+else
+{
+    <PageTitle>@_deal.Title — @_deal.CurrentPrice.ToString("C") — @TenantContext.Current.Name</PageTitle>
+
+    <HeadContent>
+        <meta name="description" content="@_deal.Description" />
+        <meta property="og:title" content="@_deal.Title" />
+        <meta property="og:description" content="@_deal.Description" />
+        <meta property="og:image" content="@_deal.ImageUrl" />
+        <meta property="og:url" content="https://@TenantContext.Current.Domain/deals/@_deal.Slug" />
+        <link rel="canonical" href="https://@TenantContext.Current.Domain/deals/@_deal.Slug" />
+
+        <script type="application/ld+json">
+        {
+            "@@context": "https://schema.org",
+            "@@type": "Product",
+            "name": "@_deal.Title",
+            "description": "@_deal.Description",
+            "image": "@_deal.ImageUrl",
+            "offers": {
+                "@@type": "Offer",
+                "price": "@_deal.CurrentPrice",
+                "priceCurrency": "@_deal.Currency",
+                "seller": { "@@type": "Organization", "name": "@_deal.RetailerName" },
+                "availability": "https://schema.org/InStock",
+                "url": "@_deal.AffiliateUrl"
+            }
+        }
+        </script>
+
+        <script type="application/ld+json">
+        {
+            "@@context": "https://schema.org",
+            "@@type": "BreadcrumbList",
+            "itemListElement": [
+                { "@@type": "ListItem", "position": 1, "name": "Home", "item": "https://@TenantContext.Current.Domain" },
+                { "@@type": "ListItem", "position": 2, "name": "@_deal.CategoryName" },
+                { "@@type": "ListItem", "position": 3, "name": "@_deal.Title" }
+            ]
+        }
+        </script>
+    </HeadContent>
+
+    <article class="deal-detail">
+        <nav class="breadcrumb" aria-label="Breadcrumb">
+            <a href="/">Home</a> &rsaquo;
+            <a href="/categories">@_deal.CategoryName</a> &rsaquo;
+            <span>@_deal.Title</span>
+        </nav>
+
+        <div class="deal-detail-grid">
+            @if (!string.IsNullOrEmpty(_deal.ImageUrl))
+            {
+                <div class="deal-image">
+                    <img src="@_deal.ImageUrl" alt="@_deal.Title" loading="lazy" />
+                </div>
+            }
+
+            <div class="deal-info">
+                <h1>@_deal.Title</h1>
+
+                @if (_deal.DealScore > 0)
+                {
+                    <div class="deal-score-badge deal-score-badge--@GetScoreClass(_deal.DealScore)"
+                         title="Deal Score: @_deal.DealScore / 100">
+                        @_deal.DealScoreLabel
+                    </div>
+                }
+
+                <div class="deal-pricing">
+                    <span class="price-current">@_deal.CurrentPrice.ToString("C")</span>
+                    @if (_deal.OriginalPrice.HasValue)
+                    {
+                        <span class="price-original">@_deal.OriginalPrice.Value.ToString("C")</span>
+                        <span class="discount-badge">@_deal.DiscountPercentage?.ToString("F0")% OFF</span>
+                    }
+                </div>
+
+                <p class="retailer">Sold by: <strong>@_deal.RetailerName</strong></p>
+
+                <a href="@_deal.AffiliateUrl"
+                   class="btn-get-deal"
+                   target="_blank"
+                   rel="noopener sponsored">
+                    Get This Deal &rarr;
+                </a>
+
+                <p class="deal-description">@_deal.Description</p>
+
+                <div class="deal-meta">
+                    <span>Posted @_deal.CreatedAtUtc.ToLocalTime().ToString("MMM d, yyyy")</span>
+                    <ExpireReportButton DealId="@_deal.Id" />
+                </div>
+            </div>
+        </div>
+    </article>
+}
+
+@code {
+    [Parameter] public string Slug { get; set; } = string.Empty;
+
+    private DealSummaryDto? _deal;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var result = await Mediator.Send(new GetDealsQuery(TenantContext.Current.Id, null, 1, 100));
+        if (result.IsSuccess)
+            _deal = result.Value.Deals.FirstOrDefault(d => d.Slug == Slug);
+
+        if (_deal is null)
+            Nav.NavigateTo("/404", replace: true);
+    }
+
+    private static string GetScoreClass(int score) => score switch
+    {
+        >= 85 => "excellent",
+        >= 70 => "great",
+        >= 50 => "good",
+        >= 30 => "fair",
+        _ => "weak"
+    };
+}

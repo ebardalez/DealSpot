@@ -1,0 +1,46 @@
+@inherits LayoutComponentBase
+@inject DealSpot.Application.Abstractions.Tenancy.ITenantContext TenantContext
+
+<div class="dealspot-layout"
+     style="--color-primary: @TenantContext.Current.Branding.PrimaryColor;
+            --color-secondary: @TenantContext.Current.Branding.SecondaryColor">
+
+    <header class="site-header">
+        <nav class="nav-container">
+            <a href="/" class="site-logo">
+                <img src="@TenantContext.Current.Branding.LogoUrl" alt="@TenantContext.Current.Name" />
+            </a>
+
+            <div class="nav-links">
+                <a href="/deals">All Deals</a>
+                <a href="/categories">Categories</a>
+            </div>
+
+            <div class="nav-auth">
+                <AuthorizeView>
+                    <Authorized>
+                        <a href="/watchlist">My Watchlist</a>
+                        <form action="/auth/logout" method="post">
+                            <AntiforgeryToken />
+                            <button type="submit">Sign Out</button>
+                        </form>
+                    </Authorized>
+                    <NotAuthorized>
+                        <a href="/auth/login/Google" class="btn-signin">Sign in with Google</a>
+                    </NotAuthorized>
+                </AuthorizeView>
+            </div>
+        </nav>
+    </header>
+
+    <main class="main-content">
+        @Body
+    </main>
+
+    <footer class="site-footer">
+        <p>
+            &copy; @DateTime.UtcNow.Year @TenantContext.Current.Name &mdash;
+            Affiliate disclosure: we may earn a commission on purchases made through our links.
+        </p>
+    </footer>
+</div>

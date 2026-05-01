@@ -1,0 +1,47 @@
+@using DealSpot.Application.Deals.GetDeals
+
+<a href="/deals/@Deal.Slug" class="deal-card">
+    @if (!string.IsNullOrEmpty(Deal.ImageUrl))
+    {
+        <div class="deal-card__image">
+            <img src="@Deal.ImageUrl" alt="@Deal.Title" loading="lazy" />
+        </div>
+    }
+
+    <div class="deal-card__body">
+        <h3 class="deal-card__title">@Deal.Title</h3>
+
+        <div class="deal-card__pricing">
+            <span class="price-current">@Deal.CurrentPrice.ToString("C")</span>
+            @if (Deal.OriginalPrice.HasValue && Deal.DiscountPercentage.HasValue)
+            {
+                <span class="price-original">@Deal.OriginalPrice.Value.ToString("C")</span>
+                <span class="discount-pill">@Deal.DiscountPercentage.Value.ToString("F0")% OFF</span>
+            }
+        </div>
+
+        <div class="deal-card__footer">
+            <span class="retailer-name">@Deal.RetailerName</span>
+            @if (Deal.DealScore > 0)
+            {
+                <span class="score-badge score-badge--@GetScoreClass(Deal.DealScore)"
+                      title="Deal Score: @Deal.DealScore/100">
+                    @Deal.DealScoreLabel
+                </span>
+            }
+        </div>
+    </div>
+</a>
+
+@code {
+    [Parameter, EditorRequired] public DealSummaryDto Deal { get; set; } = null!;
+
+    private static string GetScoreClass(int score) => score switch
+    {
+        >= 85 => "excellent",
+        >= 70 => "great",
+        >= 50 => "good",
+        >= 30 => "fair",
+        _ => "weak"
+    };
+}
