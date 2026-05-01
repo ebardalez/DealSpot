@@ -27,7 +27,6 @@ public sealed class ValidationBehavior<TRequest, TResponse>(
     IEnumerable<IValidator<TRequest>> validators)
     : IPipelineBehavior<TRequest, TResponse>
     where TRequest : class
-    where TResponse : Result
 {
     public async Task<TResponse> Handle(TRequest request, RequestHandlerDelegate<TResponse> next, CancellationToken cancellationToken)
     {
@@ -41,12 +40,18 @@ public sealed class ValidationBehavior<TRequest, TResponse>(
 
         var error = new Error("Validation.Failed", string.Join("; ", failures.Select(f => f.ErrorMessage)));
 
-        var resultType = typeof(TResponse);
-        if (resultType == typeof(Result))
+        var responseType = typeof(TResponse);
+
+        if (responseType == typeof(Result))
             return (TResponse)(object)Result.Failure(error);
 
-        var method = typeof(Result).GetMethod(nameof(Result.Failure), 1, [typeof(Error)])!
-            .MakeGenericMethod(resultType.GetGenericArguments()[0]);
-        return (TResponse)method.Invoke(null, [error])!;
+        if (responseType.IsGenericType && responseType.GetGenericTypeDefinition() == typeof(Result<>))
+        {
+            var method = typeof(Result).GetMethod(nameof(Result.Failure), 1, [typeof(Error)])!
+                .MakeGenericMethod(responseType.GetGenericArguments()[0]);
+            return (TResponse)method.Invoke(null, [error])!;
+        }
+
+        return await next();
     }
 }

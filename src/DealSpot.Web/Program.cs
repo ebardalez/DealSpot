@@ -1,7 +1,9 @@
 using DealSpot.Application;
 using DealSpot.Infrastructure;
 using DealSpot.Infrastructure.Tenancy;
+using DealSpot.Web;
 using Hangfire;
+using Microsoft.AspNetCore.Authentication;
 using Serilog;
 
 var builder = WebApplication.CreateBuilder(args);

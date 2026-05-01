@@ -1,3 +1,4 @@
+using DealSpot.Domain.Abstractions;
 using DealSpot.Domain.Deals;
 using Hangfire;
 using Microsoft.Extensions.Logging;

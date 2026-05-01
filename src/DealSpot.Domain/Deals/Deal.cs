@@ -45,7 +45,7 @@ public sealed class Deal : Entity
     public DateTime CreatedAtUtc { get; private set; }
     public DateTime? ExpiresAtUtc { get; private set; }
     public int ExpiredReportCount { get; private set; }
-    public DealScore DealScore { get; private set; }
+    public DealScore DealScore { get; private set; } = DealScore.NotCalculated;
 
     public static Result<Deal> Create(
         Guid tenantId, Guid categoryId, Guid? submittedByUserId,

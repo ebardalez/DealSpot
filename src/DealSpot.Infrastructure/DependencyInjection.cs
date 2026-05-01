@@ -99,7 +99,7 @@ public static class DependencyInjection
         RecurringJob.AddOrUpdate<DealUrlHealthCheckJob>(
             "deal-url-health-check",
             job => job.ExecuteAsync(CancellationToken.None),
-            Cron.Every6Hours());
+            "0 */6 * * *");
 
         return app;
     }
