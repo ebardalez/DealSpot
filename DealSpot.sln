@@ -15,6 +15,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DealSpot.Domain.Tests", "te
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DealSpot.Application.Tests", "tests\DealSpot.Application.Tests\DealSpot.Application.Tests.csproj", "{A1B2C3D4-0006-0000-0000-000000000006}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DealSpot.AppHost", "src\DealSpot.AppHost\DealSpot.AppHost.csproj", "{A1B2C3D4-0007-0000-0000-000000000007}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DealSpot.ServiceDefaults", "src\DealSpot.ServiceDefaults\DealSpot.ServiceDefaults.csproj", "{A1B2C3D4-0008-0000-0000-000000000008}"
+EndProject
 
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -34,5 +38,9 @@ Global
 		{A1B2C3D4-0005-0000-0000-000000000005}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{A1B2C3D4-0006-0000-0000-000000000006}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{A1B2C3D4-0006-0000-0000-000000000006}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A1B2C3D4-0007-0000-0000-000000000007}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A1B2C3D4-0007-0000-0000-000000000007}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A1B2C3D4-0008-0000-0000-000000000008}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A1B2C3D4-0008-0000-0000-000000000008}.Release|Any CPU.ActiveCfg = Release|Any CPU
 	EndGlobalSection
 EndGlobal

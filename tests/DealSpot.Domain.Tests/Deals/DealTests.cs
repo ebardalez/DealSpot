@@ -2,6 +2,7 @@ using DealSpot.Domain.Deals;
 using DealSpot.Domain.Deals.Events;
 using DealSpot.Domain.Deals.ValueObjects;
 using FluentAssertions;
+using Xunit;
 
 namespace DealSpot.Domain.Tests.Deals;
 
@@ -136,3 +137,4 @@ public sealed class DealTests
             .Which.Should().BeOfType<DealExpiredDomainEvent>();
     }
 }
+

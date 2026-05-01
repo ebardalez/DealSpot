@@ -399,3 +399,7 @@ FodyWeavers.xsd
 
 # JetBrains Rider
 *.sln.iml
+
+# Local dev secrets
+src/DealSpot.AppHost/appsettings.Development.json
+src/DealSpot.Web/appsettings.Development.json

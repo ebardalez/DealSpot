@@ -5,6 +5,7 @@ using DealSpot.Domain.Categories;
 using DealSpot.Domain.Deals;
 using FluentAssertions;
 using NSubstitute;
+using Xunit;
 
 namespace DealSpot.Application.Tests.Deals;
 
@@ -99,3 +100,4 @@ public sealed class CreateDealCommandHandlerTests
         result.Error.Should().Be(CategoryErrors.NotFound);
     }
 }
+

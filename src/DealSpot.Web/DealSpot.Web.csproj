@@ -8,14 +8,23 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\DealSpot.ServiceDefaults\DealSpot.ServiceDefaults.csproj" />
     <ProjectReference Include="..\DealSpot.Application\DealSpot.Application.csproj" />
     <ProjectReference Include="..\DealSpot.Infrastructure\DealSpot.Infrastructure.csproj" />
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="Aspire.Npgsql.EntityFrameworkCore.PostgreSQL" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
+    </PackageReference>
+    <PackageReference Include="Aspire.StackExchange.Redis.OutputCaching" />
     <PackageReference Include="Serilog.AspNetCore" />
     <PackageReference Include="Serilog.Sinks.Console" />
     <PackageReference Include="Serilog.Sinks.File" />
   </ItemGroup>
 
 </Project>
+
+

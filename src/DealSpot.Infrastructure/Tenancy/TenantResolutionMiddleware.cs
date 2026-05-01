@@ -7,12 +7,11 @@ namespace DealSpot.Infrastructure.Tenancy;
 
 public sealed class TenantResolutionMiddleware(
     RequestDelegate next,
-    ITenantRepository tenantRepository,
     IMemoryCache cache)
 {
     private static readonly TimeSpan CacheDuration = TimeSpan.FromMinutes(30);
 
-    public async Task InvokeAsync(HttpContext context, ITenantContext tenantContext)
+    public async Task InvokeAsync(HttpContext context, ITenantContext tenantContext, ITenantRepository tenantRepository)
     {
         var host = context.Request.Host.Host;
 
@@ -49,3 +48,4 @@ public sealed class TenantContext : ITenantContext
 
     internal void SetTenant(Tenant tenant) => _tenant = tenant;
 }
+

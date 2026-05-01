@@ -1,4 +1,4 @@
-using DealSpot.Application;
+﻿using DealSpot.Application;
 using DealSpot.Infrastructure;
 using DealSpot.Infrastructure.Tenancy;
 using DealSpot.Web;
@@ -7,6 +7,9 @@ using Microsoft.AspNetCore.Authentication;
 using Serilog;
 
 var builder = WebApplication.CreateBuilder(args);
+
+// Aspire service defaults (telemetry, health checks, service discovery)
+builder.AddServiceDefaults();
 
 // ─── Logging ────────────────────────────────────────────────────────────────
 builder.Host.UseSerilog((context, config) =>
@@ -21,6 +24,7 @@ builder.Services.AddApplication();
 builder.Services.AddInfrastructure(builder.Configuration);
 
 // ─── Output Caching (.NET 10) ────────────────────────────────────────────────
+builder.AddRedisOutputCache("redis");
 builder.Services.AddOutputCache(options =>
 {
     options.AddBasePolicy(policy => policy.Expire(TimeSpan.FromMinutes(5)));
@@ -99,7 +103,10 @@ app.MapPost("/auth/logout", async (HttpContext ctx) =>
     return Results.Redirect("/");
 });
 
-app.MapHealthChecks("/health");
+app.MapDefaultEndpoints(); // Aspire health + liveness endpoints
 app.UseInfrastructure();
 
 app.Run();
+
+
+

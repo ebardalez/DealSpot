@@ -3,6 +3,7 @@ using DealSpot.Application.Abstractions.Clock;
 using DealSpot.Application.Abstractions.Email;
 using DealSpot.Application.Abstractions.Tenancy;
 using DealSpot.Domain.Abstractions;
+using DealSpot.Domain.Categories;
 using DealSpot.Domain.Deals;
 using DealSpot.Domain.Tenants;
 using DealSpot.Infrastructure.Affiliate;
@@ -18,6 +19,7 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Resend;
 
 namespace DealSpot.Infrastructure;
 
@@ -39,7 +41,7 @@ public static class DependencyInjection
 
     private static void AddPersistence(IServiceCollection services, IConfiguration configuration)
     {
-        var connectionString = configuration.GetConnectionString("Database")
+        var connectionString = configuration.GetConnectionString("dealspot") ?? configuration.GetConnectionString("Database")
             ?? throw new InvalidOperationException("Database connection string is not configured.");
 
         services.AddDbContext<ApplicationDbContext>(options =>
@@ -48,11 +50,12 @@ public static class DependencyInjection
         services.AddScoped<IUnitOfWork>(sp => sp.GetRequiredService<ApplicationDbContext>());
         services.AddScoped<IDealRepository, DealRepository>();
         services.AddScoped<ITenantRepository, TenantRepository>();
+        services.AddScoped<ICategoryRepository, CategoryRepository>();
     }
 
     private static void AddBackgroundJobs(IServiceCollection services, IConfiguration configuration)
     {
-        var connectionString = configuration.GetConnectionString("Database")!;
+        var connectionString = configuration.GetConnectionString("dealspot") ?? configuration.GetConnectionString("Database")!;
 
         services.AddHangfire(config => config
             .SetDataCompatibilityLevel(CompatibilityLevel.Version_180)
@@ -80,6 +83,11 @@ public static class DependencyInjection
     private static void AddEmail(IServiceCollection services, IConfiguration configuration)
     {
         services.Configure<EmailOptions>(configuration.GetSection(EmailOptions.SectionName));
+        services.AddOptions();
+        services.AddHttpClient<ResendClient>();
+        services.Configure<ResendClientOptions>(o =>
+            o.ApiToken = configuration["Email:ResendApiKey"] ?? string.Empty);
+        services.AddTransient<IResend, ResendClient>();
         services.AddScoped<IEmailService, ResendEmailService>();
     }
 
@@ -92,7 +100,7 @@ public static class DependencyInjection
 
     private static void AddHealthChecks(IServiceCollection services, IConfiguration configuration) =>
         services.AddHealthChecks()
-            .AddNpgSql(configuration.GetConnectionString("Database")!);
+            .AddNpgSql(configuration.GetConnectionString("dealspot") ?? configuration.GetConnectionString("Database")!);
 
     public static WebApplication UseInfrastructure(this WebApplication app)
     {
@@ -104,3 +112,4 @@ public static class DependencyInjection
         return app;
     }
 }
+
