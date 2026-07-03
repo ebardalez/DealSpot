@@ -52,4 +52,21 @@ public sealed class ResendEmailService(
         }
         catch (Exception ex) { logger.LogError(ex, "Failed to send watchlist email to {Email}", toEmail); throw; }
     }
+
+    public async Task SendDigestAsync(string toEmail, string toName, DigestEmailModel model, CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            var deals = string.Join("", model.Deals.Select(d => $"<li><a href='{d.DealUrl}'>{d.DealTitle}</a> – {d.CurrentPrice:C} at {d.RetailerName}</li>"));
+            var message = new EmailMessage
+            {
+                From = $"{_options.FromName} <{_options.FromAddress}>",
+                To = [toEmail],
+                Subject = $"📬 Your Daily Deal Digest — {model.Deals.Count} deal(s) on {model.TenantName}",
+                HtmlBody = $"<h2>Your Daily Deal Digest</h2><p>{model.Deals.Count} new deal(s) matched your watchlist:</p><ul>{deals}</ul>"
+            };
+            await resendClient.EmailSendAsync(message, cancellationToken);
+        }
+        catch (Exception ex) { logger.LogError(ex, "Failed to send digest to {Email}", toEmail); throw; }
+    }
 }

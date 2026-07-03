@@ -21,6 +21,7 @@
         </div>
 
         <div class="deal-card__footer">
+            <VoteButton DealId="@Deal.Id" InitialNetScore="@Deal.NetScore" />
             <span class="retailer-name">@Deal.RetailerName</span>
             @if (Deal.DealScore > 0)
             {

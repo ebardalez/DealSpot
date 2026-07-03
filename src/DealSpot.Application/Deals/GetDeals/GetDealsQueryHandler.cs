@@ -13,7 +13,7 @@ public sealed record DealSummaryDto(
     Guid Id, string Title, string Slug, string Description,
     decimal CurrentPrice, decimal? OriginalPrice, decimal? DiscountPercentage, string Currency,
     string AffiliateUrl, string? ImageUrl, string RetailerName, string CategoryName, string? CategorySlug,
-    int DealScore, string DealScoreLabel, DateTime CreatedAtUtc);
+    int DealScore, string DealScoreLabel, int NetScore, DateTime CreatedAtUtc);
 
 public sealed class GetDealsQueryHandler(
     IDealRepository dealRepository,
@@ -36,7 +36,7 @@ public sealed class GetDealsQueryHandler(
                 d.Id, d.Title, d.Slug, d.Description,
                 d.Price.CurrentPrice, d.Price.OriginalPrice, d.Price.DiscountPercentage, d.Price.Currency,
                 d.AffiliateUrl, d.ImageUrl, d.RetailerName, cat.Name ?? string.Empty, cat.Slug,
-                d.DealScore.Value, d.DealScore.Label, d.CreatedAtUtc);
+                d.DealScore.Value, d.DealScore.Label, d.NetScore, d.CreatedAtUtc);
         }).ToList();
 
         return Result.Success(new GetDealsResponse(dtos, dtos.Count, query.Page, query.PageSize));

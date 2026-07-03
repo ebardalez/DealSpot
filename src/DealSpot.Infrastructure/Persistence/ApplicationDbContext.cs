@@ -19,7 +19,9 @@ public sealed class ApplicationDbContext(DbContextOptions<ApplicationDbContext> 
     public DbSet<AffiliateNetwork> AffiliateNetworks => Set<AffiliateNetwork>();
     public DbSet<User> AppUsers => Set<User>();
     public DbSet<WatchlistEntry> WatchlistEntries => Set<WatchlistEntry>();
+    public DbSet<DealVote> DealVotes => Set<DealVote>();
     public DbSet<UserNotificationPreference> NotificationPreferences => Set<UserNotificationPreference>();
+    public DbSet<PendingAlert> PendingAlerts => Set<PendingAlert>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

@@ -4,6 +4,7 @@ public interface IEmailService
 {
     Task SendDealAlertAsync(string toEmail, string toName, DealAlertEmailModel model, CancellationToken cancellationToken = default);
     Task SendWatchlistMatchAsync(string toEmail, string toName, WatchlistMatchEmailModel model, CancellationToken cancellationToken = default);
+    Task SendDigestAsync(string toEmail, string toName, DigestEmailModel model, CancellationToken cancellationToken = default);
 }
 
 public sealed record DealAlertEmailModel(
@@ -12,3 +13,6 @@ public sealed record DealAlertEmailModel(
 
 public sealed record WatchlistMatchEmailModel(
     string TenantName, string WatchedKeyword, IReadOnlyList<DealAlertEmailModel> MatchingDeals);
+
+public sealed record DigestEmailModel(
+    string TenantName, IReadOnlyList<DealAlertEmailModel> Deals);

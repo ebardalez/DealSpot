@@ -6,22 +6,22 @@ Multi-tenant deal aggregator platform built with .NET 10 Blazor SSR, PostgreSQL,
 
 ```
 DealSpot/
-+-- src/
-¦   +-- DealSpot.Domain/          # Entities, Value Objects, Domain Events, Repository interfaces
-¦   +-- DealSpot.Application/     # CQRS Commands/Queries, MediatR, FluentValidation
-¦   +-- DealSpot.Infrastructure/  # EF Core, Repositories, Hangfire, Email, Affiliate rewriting
-¦   +-- DealSpot.Web/             # Blazor SSR (.NET 10), Output Caching, Auth
-¦   +-- DealSpot.AppHost/         # .NET Aspire orchestrator (local dev)
-¦   +-- DealSpot.ServiceDefaults/ # Shared telemetry, health checks, service discovery
-+-- tests/
-¦   +-- DealSpot.Domain.Tests/
-¦   +-- DealSpot.Application.Tests/
-+-- docker/
-    +-- Dockerfile
-    +-- docker-compose.yml
-    +-- .env.example
+src/
+  DealSpot.Domain/            # Entities, Value Objects, Domain Events, Repository interfaces
+  DealSpot.Application/       # CQRS Commands/Queries, MediatR, FluentValidation
+  DealSpot.Infrastructure/    # EF Core, Repositories, Hangfire, Email, Affiliate rewriting
+  DealSpot.Web/               # Blazor SSR (.NET 10), Output Caching, Auth
+  DealSpot.AppHost/           # .NET Aspire orchestrator (local dev)
+  DealSpot.ServiceDefaults/   # Shared telemetry, health checks, service discovery
+tests/
+  DealSpot.Domain.Tests/      # 10 domain unit tests
+  DealSpot.Application.Tests/ # 22 application unit tests
+specs/                        # Feature specs (one per feature)
+docker/
+  Dockerfile
+  docker-compose.yml
+  .env.example
 ```
-
 ## Tech Stack
 
 | Concern | Choice |
@@ -57,7 +57,7 @@ cd C:\path\to\DealSpot
 "%USERPROFILE%\.dotnet\tools\dotnet-ef.exe" (see step 3)
 ```
 
-Or in Visual Studio: right-click `DealSpot.AppHost` ? Manage User Secrets, then add:
+Or in Visual Studio: right-click `DealSpot.AppHost` > Manage User Secrets, then add:
 
 ```json
 {
@@ -165,14 +165,23 @@ docker compose -f docker/docker-compose.yml up -d
 ```
 
 Point Cloudflare DNS (proxied) for each subdomain to your Hetzner IP:
-- `tech.yourdomain.com` ? Hetzner IP
-- `aquarium.yourdomain.com` ? same IP
+- `tech.yourdomain.com` -> Hetzner IP
+- `aquarium.yourdomain.com` -> same IP
 
-## MVP Roadmap
+## Running Tests
 
-### Phase 1 — Core (you as sole submitter)
-- [x] Multi-tenant Blazor SSR shell
-- [x] Deal submission with affiliate URL auto-rewriting
+```cmd
+dotnet test tests/DealSpot.Application.Tests
+dotnet test tests/DealSpot.Domain.Tests
+```
+
+32 tests total (22 application + 10 domain). xUnit + NSubstitute + FluentAssertions.
+
+## Features
+
+### Phase 1 -- Core (admin submits deals)
+- [x] Multi-tenant Blazor SSR shell with subdomain resolution + per-tenant branding
+- [x] Deal submission with affiliate URL auto-rewriting pipeline
 - [x] Dedicated SEO pages with JSON-LD schema (Product + Offer + BreadcrumbList)
 - [x] .NET 10 Output Caching (Redis) + Cloudflare edge caching
 - [x] Community expired deal reporting (auto-expires at 5 reports)
@@ -181,16 +190,22 @@ Point Cloudflare DNS (proxied) for each subdomain to your Hetzner IP:
 - [x] EF Core migrations
 - [x] Docker Compose deployment
 
-### Phase 2 — Community
-- [ ] Google + Apple social login
-- [ ] Deal watchlist + email alerts via Resend (3 trigger types)
-- [ ] Deal Score (discount % + retailer trust + vote velocity)
+### Phase 2 -- Community & Engagement (complete)
+- [x] Domain event dispatch (MediatR `IPublisher` after `SaveChangesAsync`)
+- [x] Google OAuth login + domain `User` provisioning
+- [x] Category browse pages (`/categories`, `/categories/{slug}`)
+- [x] Output cache invalidation via domain event handlers (tag eviction)
+- [x] Admin deal submission UI (policy-based auth, `/admin/deals`)
+- [x] Deal watchlist -- category watches + keyword watches (`/watchlist`)
+- [x] Deal voting -- upvote/downvote with denormalized counts, `VoteButton` component
+- [x] Email alerts -- instant + daily digest via Resend, `DealCreatedNotificationHandler`
+- [x] Notification preferences -- per-user toggles + frequency (`/settings/notifications`)
+- [ ] Deal Score calculation (discount % + retailer trust + vote velocity)
 - [ ] AdSense integration
 
-### Phase 3 — Intelligence
+### Phase 3 -- Intelligence (planned)
 - [ ] Price history (Keepa API for Amazon + custom scrapers)
-- [ ] Full Deal Score incorporating price history
+- [ ] Price drop alerts (watchlist + price history triggers)
 - [ ] Community deal submissions + approval queue
-- [ ] Upvote/downvote system
-- [ ] User reputation system
-- [ ] Browser push notifications
+- [ ] User reputation system (vote + submission based)
+- [ ] Web push notifications

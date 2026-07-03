@@ -1,0 +1,59 @@
+@using DealSpot.Application.Deals.Vote
+@using MediatR
+@using Microsoft.AspNetCore.Components.Authorization
+@inject ISender Mediator
+@inject NavigationManager Nav
+@rendermode InteractiveServer
+
+<div class="vote-widget">
+    <AuthorizeView Context="authContext">
+        <Authorized>
+            <button class="vote-btn vote-btn--up @(_userVote == 1 ? "active" : "")"
+                    @onclick="() => VoteAsync(1)" disabled="@_loading"
+                    title="Upvote">▲</button>
+            <span class="vote-score">@_netScore</span>
+            <button class="vote-btn vote-btn--down @(_userVote == -1 ? "active" : "")"
+                    @onclick="() => VoteAsync(-1)" disabled="@_loading"
+                    title="Downvote">▼</button>
+        </Authorized>
+        <NotAuthorized>
+            <button class="vote-btn vote-btn--up" @onclick="RedirectToLogin" title="Sign in to vote">▲</button>
+            <span class="vote-score">@_netScore</span>
+            <button class="vote-btn vote-btn--down" @onclick="RedirectToLogin" title="Sign in to vote">▼</button>
+        </NotAuthorized>
+    </AuthorizeView>
+</div>
+
+@code {
+    [Parameter, EditorRequired] public Guid DealId { get; set; }
+    [Parameter] public int InitialNetScore { get; set; }
+
+    private int _netScore;
+    private int? _userVote;
+    private bool _loading;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _netScore = InitialNetScore;
+        var result = await Mediator.Send(new GetDealVoteQuery(DealId));
+        if (result.IsSuccess)
+        {
+            _netScore = result.Value.NetScore;
+            _userVote = result.Value.UserVote;
+        }
+    }
+
+    private async Task VoteAsync(int value)
+    {
+        _loading = true;
+        var result = await Mediator.Send(new CastVoteCommand(DealId, value));
+        if (result.IsSuccess)
+        {
+            _netScore = result.Value.NetScore;
+            _userVote = result.Value.UserVote;
+        }
+        _loading = false;
+    }
+
+    private void RedirectToLogin() => Nav.NavigateTo("/auth/login/Google", forceLoad: true);
+}

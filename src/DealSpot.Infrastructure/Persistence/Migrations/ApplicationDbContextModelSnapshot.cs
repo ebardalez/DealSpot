@@ -138,6 +138,12 @@ namespace DealSpot.Infrastructure.Persistence.Migrations
                         .HasColumnType("character varying(2000)")
                         .HasColumnName("description");
 
+                    b.Property<int>("DownVoteCount")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(0)
+                        .HasColumnName("down_vote_count");
+
                     b.Property<int>("ExpiredReportCount")
                         .HasColumnType("integer")
                         .HasColumnName("expired_report_count");
@@ -187,6 +193,12 @@ namespace DealSpot.Infrastructure.Persistence.Migrations
                         .HasColumnType("character varying(200)")
                         .HasColumnName("title");
 
+                    b.Property<int>("UpVoteCount")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(0)
+                        .HasColumnName("up_vote_count");
+
                     b.HasKey("Id")
                         .HasName("pk_deals");
 
@@ -204,6 +216,42 @@ namespace DealSpot.Infrastructure.Persistence.Migrations
                         .HasDatabaseName("ix_deals_tenant_id_category_id_status");
 
                     b.ToTable("deals", (string)null);
+                });
+
+            modelBuilder.Entity("DealSpot.Domain.Deals.DealVote", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at_utc");
+
+                    b.Property<Guid>("DealId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("deal_id");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("user_id");
+
+                    b.Property<int>("Value")
+                        .HasColumnType("integer")
+                        .HasColumnName("value");
+
+                    b.HasKey("Id")
+                        .HasName("pk_deal_votes");
+
+                    b.HasIndex("DealId")
+                        .HasDatabaseName("ix_deal_votes_deal_id");
+
+                    b.HasIndex("DealId", "UserId")
+                        .IsUnique()
+                        .HasDatabaseName("ix_deal_votes_deal_id_user_id");
+
+                    b.ToTable("deal_votes", (string)null);
                 });
 
             modelBuilder.Entity("DealSpot.Domain.Tenants.Tenant", b =>
@@ -251,6 +299,56 @@ namespace DealSpot.Infrastructure.Persistence.Migrations
                         .HasDatabaseName("ix_tenants_slug");
 
                     b.ToTable("tenants", (string)null);
+                });
+
+            modelBuilder.Entity("DealSpot.Domain.Users.PendingAlert", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<string>("AlertType")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("alert_type");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at_utc");
+
+                    b.Property<Guid>("DealId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("deal_id");
+
+                    b.Property<bool>("IsSent")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_sent");
+
+                    b.Property<string>("MatchedKeyword")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("matched_keyword");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("tenant_id");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("user_id");
+
+                    b.HasKey("Id")
+                        .HasName("pk_pending_alerts");
+
+                    b.HasIndex("IsSent")
+                        .HasDatabaseName("ix_pending_alerts_is_sent");
+
+                    b.HasIndex("UserId", "IsSent")
+                        .HasDatabaseName("ix_pending_alerts_user_id_is_sent");
+
+                    b.ToTable("pending_alerts", (string)null);
                 });
 
             modelBuilder.Entity("DealSpot.Domain.Users.User", b =>
@@ -332,6 +430,10 @@ namespace DealSpot.Infrastructure.Persistence.Migrations
 
                     b.HasKey("Id")
                         .HasName("pk_notification_preferences");
+
+                    b.HasIndex("UserId", "TenantId")
+                        .IsUnique()
+                        .HasDatabaseName("ix_notification_preferences_user_id_tenant_id");
 
                     b.ToTable("notification_preferences", (string)null);
                 });

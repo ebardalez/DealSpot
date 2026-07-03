@@ -21,6 +21,7 @@
                     <Authorized>
                         <span class="nav-user-name">@context.User.Identity?.Name</span>
                         <a href="/watchlist">My Watchlist</a>
+                        <a href="/settings/notifications">Settings</a>
                         <AuthorizeView Policy="Admin">
                             <Authorized Context="adminContext">
                                 <a href="/admin/deals">Admin</a>

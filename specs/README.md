@@ -8,20 +8,20 @@ Docs (`DOCUMENTATION.md` §23) drift from code. Actual state:
 
 **Built & wired**
 - Domain: `Deal`, `Tenant`, `Category`, `User`, `WatchlistEntry`, `UserNotificationPreference`, `AffiliateNetwork`.
-- App: `CreateDeal`, `ReportDealExpired`, `GetDeals` handlers; `Logging` + `Validation` pipeline behaviors.
-- Infra: `ApplicationDbContext` (all DbSets), `DealRepository`, `TenantRepository`, `CategoryRepository`, `AffiliateUrlRewriter`, `ResendEmailService`, `DealUrlHealthCheckJob`, `TenantResolutionMiddleware`.
-- Web: `Home`, `DealDetail`, `DealCard`, `ExpireReportButton`, `MainLayout`; **Google OAuth is wired** in `Program.cs` (docs wrongly list it as Phase 2 TODO); output cache (3 policies); Hangfire dashboard.
-- Tests: `DealTests`, `CreateDealCommandHandlerTests`. Migration: `InitialCreate`.
+- App: `CreateDeal`, `ReportDealExpired`, `ExpireDeal`, `GetDeals`, `CastVote`, `GetDealVote`, `GetPreferences`, `UpdatePreferences`, `AddCategoryWatch`, `AddKeywordWatch`, `RemoveWatch`, `GetWatchlist`, `ProvisionUser` handlers; `DealCreatedNotificationHandler`; `Logging` + `Validation` pipeline behaviors.
+- Infra: `ApplicationDbContext` (all DbSets), `DealRepository`, `DealVoteRepository`, `TenantRepository`, `CategoryRepository`, `UserRepository`, `WatchlistRepository`, `NotificationPreferenceRepository`, `PendingAlertRepository`, `AffiliateUrlRewriter`, `ResendEmailService`, `DealUrlHealthCheckJob`, `DailyDigestJob`, `TenantResolutionMiddleware`, `OutputCacheInvalidator`.
+- Web: `Home`, `DealDetail`, `DealCard`, `VoteButton`, `ExpireReportButton`, `WatchCategoryButton`, `MainLayout`, `CategoryList`, `CategoryDetail`, `Watchlist`, `NotificationSettings`, `AdminDealList`, `AdminDealNew`; **Google OAuth is wired** in `Program.cs`; output cache (3 policies); Hangfire dashboard.
+- Tests: `DealTests`, `CreateDealCommandHandlerTests`, `CastVoteCommandHandlerTests`, `DealCreatedNotificationHandlerTests`, `AddCategoryWatchCommandHandlerTests`, `RemoveWatchCommandHandlerTests`, `ProvisionUserCommandHandlerTests`, `CacheInvalidationHandlerTests`. Migrations: `InitialCreate`, `AddUserAndCategoryConfigurations`, `AddWatchlistEntryConfiguration`, `AddDealVotingAndNotifications`.
 
 **Domain-only stubs (entity exists, nothing consumes it)**
-- `UserNotificationPreference`, `AffiliateNetwork` — no repositories, handlers, EF configs, or UI.
+- `AffiliateNetwork` — no repository, handler, EF config, or UI.
 
 **Gaps found beyond the roadmap**
 - ~~Domain events raised but never dispatched (`SaveChangesAsync` only calls `base`)~~ → **fixed in 00**.
 - ~~`/categories` linked from `DealDetail` breadcrumb but no page exists~~ → **fixed in 08**.
 - ~~Cache tags declared but never evicted~~ → **fixed in 09**.
 - ~~OAuth sign-in creates no domain `User` row~~ → **fixed in 01**.
-- ~~No EF config for `Category`, `User`~~ → **added** `CategoryConfiguration`, `UserConfiguration`, `WatchlistEntryConfiguration`. UserNotificationPreference, AffiliateNetwork remain convention-only (add as each feature lands).
+- ~~No EF config for `Category`, `User`~~ → **added** `CategoryConfiguration`, `UserConfiguration`, `WatchlistEntryConfiguration`, `NotificationPreferenceConfiguration`. AffiliateNetwork remains convention-only (add when that feature lands).
 
 ## Index
 
@@ -30,8 +30,8 @@ Docs (`DOCUMENTATION.md` §23) drift from code. Actual state:
 | 00 | Domain event dispatch | Foundation | — | ✅ Done |
 | 01 | User accounts & auth wiring | 2 | — | ✅ Done |
 | 02 | Watchlist | 2 | 01 | ✅ Done |
-| 03 | Email alerts & preferences | 2 | 00, 01, 02 | |
-| 04 | Deal voting | 2 | 01 | |
+| 03 | Email alerts & preferences | 2 | 00, 01, 02 | ✅ Done |
+| 04 | Deal voting | 2 | 01 | ✅ Done |
 | 05 | Deal Score calculation | 2 | 04 (velocity) | |
 | 06 | AdSense | 2 | — | |
 | 07 | Admin deal submission UI | 2 | 01 | ✅ Done |

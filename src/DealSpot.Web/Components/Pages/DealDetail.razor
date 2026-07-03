@@ -101,6 +101,7 @@ else
                 <p class="deal-description">@_deal.Description</p>
 
                 <div class="deal-meta">
+                    <VoteButton DealId="@_deal.Id" InitialNetScore="@_deal.NetScore" />
                     <span>Posted @_deal.CreatedAtUtc.ToLocalTime().ToString("MMM d, yyyy")</span>
                     <ExpireReportButton DealId="@_deal.Id" />
                 </div>

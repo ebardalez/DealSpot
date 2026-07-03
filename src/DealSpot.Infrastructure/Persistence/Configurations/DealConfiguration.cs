@@ -41,5 +41,10 @@ internal sealed class DealConfiguration : IEntityTypeConfiguration<Deal>
         builder.HasIndex(d => new { d.TenantId, d.CategoryId, d.Status });
         builder.HasIndex(d => new { d.TenantId, d.Slug }).IsUnique();
         builder.HasIndex(d => d.CreatedAtUtc);
+
+        // Voting denormalized counts
+        builder.Property(d => d.UpVoteCount).HasDefaultValue(0);
+        builder.Property(d => d.DownVoteCount).HasDefaultValue(0);
+        builder.Ignore(d => d.NetScore); // computed, not persisted
     }
 }

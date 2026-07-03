@@ -46,6 +46,9 @@ public sealed class Deal : Entity
     public DateTime? ExpiresAtUtc { get; private set; }
     public int ExpiredReportCount { get; private set; }
     public DealScore DealScore { get; private set; } = DealScore.NotCalculated;
+    public int UpVoteCount { get; private set; }
+    public int DownVoteCount { get; private set; }
+    public int NetScore => UpVoteCount - DownVoteCount;
 
     public static Result<Deal> Create(
         Guid tenantId, Guid categoryId, Guid? submittedByUserId,
@@ -92,5 +95,17 @@ public sealed class Deal : Entity
     {
         if (!string.IsNullOrWhiteSpace(affiliateUrl))
             AffiliateUrl = affiliateUrl;
+    }
+
+    public void ApplyVote(int value)
+    {
+        if (value > 0) UpVoteCount++;
+        else DownVoteCount++;
+    }
+
+    public void RemoveVote(int value)
+    {
+        if (value > 0) UpVoteCount = Math.Max(0, UpVoteCount - 1);
+        else DownVoteCount = Math.Max(0, DownVoteCount - 1);
     }
 }

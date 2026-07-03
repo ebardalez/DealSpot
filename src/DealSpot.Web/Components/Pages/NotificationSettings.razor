@@ -1,0 +1,97 @@
+@page "/settings/notifications"
+@using DealSpot.Application.NotificationPreferences
+@using DealSpot.Domain.Users
+@using MediatR
+@using Microsoft.AspNetCore.Authorization
+@attribute [Authorize]
+@inject ISender Mediator
+@rendermode InteractiveServer
+
+<PageTitle>Notification Settings</PageTitle>
+
+<h1>Notification Settings</h1>
+
+@if (_saved)
+{
+    <div class="alert alert-success">Settings saved.</div>
+}
+
+@if (_loaded)
+{
+    <div class="notification-settings">
+        <h2>Email Alerts</h2>
+
+        <label class="setting-toggle">
+            <input type="checkbox" @bind="_newDealInCategory" />
+            <span>New deal in a watched category</span>
+        </label>
+
+        <label class="setting-toggle">
+            <input type="checkbox" @bind="_watchlistMatch" />
+            <span>Deal matches a watched keyword</span>
+        </label>
+
+        <label class="setting-toggle">
+            <input type="checkbox" @bind="_dealExpiringSoon" />
+            <span>Deal expiring soon</span>
+        </label>
+
+        <h2>Frequency</h2>
+
+        <label class="setting-toggle">
+            <input type="radio" name="frequency" value="@NotificationFrequency.Instant"
+                   checked="@(_frequency == NotificationFrequency.Instant)"
+                   @onchange="() => _frequency = NotificationFrequency.Instant" />
+            <span>Instant — email me right away</span>
+        </label>
+
+        <label class="setting-toggle">
+            <input type="radio" name="frequency" value="@NotificationFrequency.DailyDigest"
+                   checked="@(_frequency == NotificationFrequency.DailyDigest)"
+                   @onchange="() => _frequency = NotificationFrequency.DailyDigest" />
+            <span>Daily digest — one email per day</span>
+        </label>
+
+        <button class="btn-save" @onclick="SaveAsync" disabled="@_saving">
+            @(_saving ? "Saving..." : "Save Settings")
+        </button>
+    </div>
+}
+else
+{
+    <p>Loading...</p>
+}
+
+@code {
+    private bool _loaded;
+    private bool _saving;
+    private bool _saved;
+
+    private bool _newDealInCategory;
+    private bool _watchlistMatch;
+    private bool _dealExpiringSoon;
+    private NotificationFrequency _frequency;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var result = await Mediator.Send(new GetPreferencesQuery());
+        if (result.IsSuccess)
+        {
+            _newDealInCategory = result.Value.NewDealInCategory;
+            _watchlistMatch = result.Value.WatchlistMatch;
+            _dealExpiringSoon = result.Value.DealExpiringSoon;
+            _frequency = result.Value.Frequency;
+        }
+        _loaded = true;
+    }
+
+    private async Task SaveAsync()
+    {
+        _saving = true;
+        _saved = false;
+        var result = await Mediator.Send(new UpdatePreferencesCommand(
+            _newDealInCategory, _watchlistMatch, _dealExpiringSoon, _frequency));
+        _saved = result.IsSuccess;
+        _saving = false;
+    }
+}

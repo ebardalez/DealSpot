@@ -56,6 +56,9 @@ public static class DependencyInjection
         services.AddScoped<ICategoryRepository, CategoryRepository>();
         services.AddScoped<IUserRepository, UserRepository>();
         services.AddScoped<IWatchlistRepository, WatchlistRepository>();
+        services.AddScoped<IDealVoteRepository, DealVoteRepository>();
+        services.AddScoped<INotificationPreferenceRepository, NotificationPreferenceRepository>();
+        services.AddScoped<IPendingAlertRepository, PendingAlertRepository>();
     }
 
     private static void AddBackgroundJobs(IServiceCollection services, IConfiguration configuration)
@@ -114,6 +117,11 @@ public static class DependencyInjection
             "deal-url-health-check",
             job => job.ExecuteAsync(CancellationToken.None),
             "0 */6 * * *");
+
+        RecurringJob.AddOrUpdate<DailyDigestJob>(
+            "daily-digest",
+            job => job.ExecuteAsync(CancellationToken.None),
+            Cron.Daily(8)); // 8 AM UTC
 
         return app;
     }
