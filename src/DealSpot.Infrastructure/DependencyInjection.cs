@@ -60,6 +60,7 @@ public static class DependencyInjection
         services.AddScoped<IDealVoteRepository, DealVoteRepository>();
         services.AddScoped<INotificationPreferenceRepository, NotificationPreferenceRepository>();
         services.AddScoped<IPendingAlertRepository, PendingAlertRepository>();
+        services.AddScoped<IPriceSnapshotRepository, PriceSnapshotRepository>();
     }
 
     private static void AddBackgroundJobs(IServiceCollection services, IConfiguration configuration)

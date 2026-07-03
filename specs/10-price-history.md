@@ -1,36 +1,44 @@
 # 10 — Price History
 
-**Phase:** 3 · **Status:** Not built · **Depends on:** 00
+**Phase:** 3 · **Status:** ✅ Done · **Depends on:** 00
 
 ## Goal
-Track price over time per deal/product to power price-drop alerts (11) and the strongest Deal Score signal (05). Amazon via Keepa API; niche retailers via a lightweight HTTP scraper. Store the clean `OriginalUrl` (already captured) as the price key.
+Track price over time per deal to power price-drop alerts (11) and inform buyers. Record snapshots on deal creation and admin price updates.
 
-## Changes
+## What Was Built
 
 ### Domain
-- `PriceHistory/PricePoint.cs` (`Entity`): `DealId` (or product key), `Price`, `Currency`, `Source` (`Keepa`/`Scraper`), `ObservedAtUtc`.
-- `IPriceHistoryRepository`: `Add`, `GetForDealAsync(dealId, sinceUtc)`, `GetLatestAsync(dealId)`.
+- `PriceSnapshot` entity: `DealId`, `Price`, `OriginalPrice`, `Currency`, `Source` ("initial"/"admin_update"/"scraper"), `RecordedAtUtc`. Static factory `Record(...)`.
+- `IPriceSnapshotRepository`: `GetByDealAsync(dealId)`, `Add(snapshot)`.
+- `DealPriceChangedDomainEvent`: carries `DealId`, `TenantId`, `OldPrice`, `NewPrice`, `NewOriginalPrice`, `Currency`.
+- `Deal.UpdatePrice(newCurrent, newOriginal)`: validates, updates `DealPrice` VO, raises `DealPriceChangedDomainEvent`. No-op if unchanged.
 
 ### Application
-- `Abstractions/Pricing/IPriceProvider`: `Task<PricePoint?> GetCurrentPriceAsync(string canonicalUrl, CancellationToken)`.
-- On new point below current deal price → raise `DealPriceDroppedDomainEvent(dealId, oldPrice, newPrice)` (consumed by 11).
+- `RecordPriceSnapshotHandler`: implements `INotificationHandler<DealCreatedDomainEvent>` + `INotificationHandler<DealPriceChangedDomainEvent>`. Records a snapshot on each event.
+- `GetPriceHistoryQuery` → `IReadOnlyList<PriceSnapshotDto>` ordered chronologically.
+- `UpdateDealPriceCommand` → loads deal, calls `UpdatePrice`, persists. Domain event pipeline handles the rest.
 
 ### Infrastructure
-- `KeepaPriceProvider` (Keepa API, Amazon domains; key via config/env).
-- `ScraperPriceProvider` (`HttpClient` + CSS/JSON-LD `price` selector per retailer domain; config-driven selectors).
-- `PriceProviderRouter` picks by domain (Amazon → Keepa else scraper).
-- Hangfire `PriceRefreshJob` (`Cron` ~6–12h): batch active deals, fetch, append `PricePoint`, update deal price if changed.
-- Configs + migration `AddPriceHistory` (consider Timescale/hypertable later; plain table for MVP).
+- `PriceSnapshotConfiguration`: `price_snapshots` table, index on `(deal_id, recorded_at_utc)`.
+- `PriceSnapshotRepository`: EF Core impl.
+- Registered `IPriceSnapshotRepository` in DI. Added `PriceSnapshots` DbSet to `ApplicationDbContext`.
 
 ### Web
-- Optional sparkline on `DealDetail` from `GetForDealAsync` (defer if not needed).
+- `DealDetail.razor`: CSS bar chart of price history (only renders when >1 snapshot). Shows low/high range.
+- `AdminDealPrice.razor`: `/admin/deals/{id}/price` — update price form + history table. "Price" button on admin deal list.
 
-## Acceptance
-- Amazon deal routes to Keepa; non-Amazon to scraper.
-- Refresh appends a point; a drop below stored price emits `DealPriceDroppedDomainEvent`.
-- Scraper failure logs and skips (no crash, no bad point).
+## Deviations from Original Spec
+- **No Keepa API / scraper**: `// ponytail: record prices on admin updates only. Add scraper job when price-tracking API/service is available.` No `IPriceProvider`, no `PriceProviderRouter`, no `PriceRefreshJob`.
+- **Simpler entity name**: `PriceSnapshot` instead of `PricePoint`.
+- **No sparkline**: inline CSS bar chart instead.
+- **Event name**: `DealPriceChangedDomainEvent` instead of `DealPriceDroppedDomainEvent` — covers all price changes, not just drops. Drop detection moved to the alert handler (spec 11).
 
-## Test
-`PriceProviderRouter`: domain routing. Handler: drop emits event; equal/higher does not.
+## Tests
+- `UpdateDealPriceCommandHandlerTests`: price update persists, same-price no-op, not found, invalid price.
+- `RecordPriceSnapshotHandlerTests`: initial snapshot on create, snapshot on price change.
 
-> `// ponytail:` config-driven CSS selectors, no headless browser. Add a browser (Playwright) only for JS-rendered retailers that a plain fetch can't read.
+## Migration
+```bash
+dotnet ef migrations add AddPriceSnapshots --project src/DealSpot.Infrastructure --startup-project src/DealSpot.Web --output-dir Persistence/Migrations
+```
+Auto-applied on startup.

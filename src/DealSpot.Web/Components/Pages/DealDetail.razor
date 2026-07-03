@@ -1,6 +1,7 @@
 @page "/deals/{slug}"
 @using DealSpot.Application.Abstractions.Tenancy
 @using DealSpot.Application.Deals.GetDeals
+@using DealSpot.Application.Deals.PriceHistory
 @using MediatR
 @inject ITenantContext TenantContext
 @inject ISender Mediator
@@ -102,6 +103,28 @@ else
 
                 <AdUnit Placement="deal-detail" />
 
+                @if (_priceHistory is not null && _priceHistory.Count > 1)
+                {
+                    <div class="price-history" style="margin-top:1.5rem">
+                        <h3>Price History</h3>
+                        @{ var maxPrice = _priceHistory.Max(p => p.Price); }
+                        <div style="display:flex;align-items:flex-end;gap:4px;height:80px;margin:0.5rem 0">
+                            @foreach (var snapshot in _priceHistory)
+                            {
+                                var pct = maxPrice > 0 ? (int)(snapshot.Price / maxPrice * 100) : 0;
+                                <div style="flex:1;display:flex;flex-direction:column;align-items:center;min-width:0" title="@snapshot.Price.ToString("C") on @snapshot.RecordedAtUtc.ToString("MMM d")">
+                                    <div style="width:100%;max-width:40px;background:var(--color-primary,#3b82f6);border-radius:3px 3px 0 0;height:@(pct)%"></div>
+                                    <span style="font-size:0.6rem;color:#888;margin-top:2px;white-space:nowrap">@snapshot.RecordedAtUtc.ToString("M/d")</span>
+                                </div>
+                            }
+                        </div>
+                        <p style="font-size:0.85rem;color:#666">
+                            Low: <strong>@_priceHistory.Min(p => p.Price).ToString("C")</strong>
+                            &middot; High: <strong>@maxPrice.ToString("C")</strong>
+                        </p>
+                    </div>
+                }
+
                 <div class="deal-meta">
                     <VoteButton DealId="@_deal.Id" InitialNetScore="@_deal.NetScore" />
                     <span>Posted @_deal.CreatedAtUtc.ToLocalTime().ToString("MMM d, yyyy")</span>
@@ -116,6 +139,7 @@ else
     [Parameter] public string Slug { get; set; } = string.Empty;
 
     private DealSummaryDto? _deal;
+    private IReadOnlyList<PriceSnapshotDto>? _priceHistory;
 
     protected override async Task OnInitializedAsync()
     {
@@ -124,7 +148,14 @@ else
             _deal = result.Value.Deals.FirstOrDefault(d => d.Slug == Slug);
 
         if (_deal is null)
+        {
             Nav.NavigateTo("/404", replace: true);
+            return;
+        }
+
+        var historyResult = await Mediator.Send(new GetPriceHistoryQuery(_deal.Id));
+        if (historyResult.IsSuccess)
+            _priceHistory = historyResult.Value;
     }
 
     private static string GetScoreClass(int score) => score switch

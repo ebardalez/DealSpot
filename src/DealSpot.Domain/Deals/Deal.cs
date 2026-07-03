@@ -91,6 +91,19 @@ public sealed class Deal : Entity
 
     public void UpdateDealScore(DealScore score) => DealScore = score;
 
+    public Result UpdatePrice(decimal newCurrentPrice, decimal? newOriginalPrice)
+    {
+        if (newCurrentPrice <= 0)
+            return Result.Failure(DealErrors.InvalidPrice);
+        if (newCurrentPrice == Price.CurrentPrice && newOriginalPrice == Price.OriginalPrice)
+            return Result.Success(); // no-op
+
+        var oldPrice = Price.CurrentPrice;
+        Price = new DealPrice(newCurrentPrice, newOriginalPrice, Price.Currency);
+        RaiseDomainEvent(new DealPriceChangedDomainEvent(Id, TenantId, oldPrice, newCurrentPrice, newOriginalPrice, Price.Currency));
+        return Result.Success();
+    }
+
     public void UpdateAffiliateUrl(string affiliateUrl)
     {
         if (!string.IsNullOrWhiteSpace(affiliateUrl))

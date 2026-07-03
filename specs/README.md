@@ -8,10 +8,10 @@ Docs (`DOCUMENTATION.md` §23) drift from code. Actual state:
 
 **Built & wired**
 - Domain: `Deal`, `Tenant`, `Category`, `User`, `WatchlistEntry`, `UserNotificationPreference`, `AffiliateNetwork`.
-- App: `CreateDeal`, `ReportDealExpired`, `ExpireDeal`, `GetDeals`, `CastVote`, `GetDealVote`, `GetPreferences`, `UpdatePreferences`, `AddCategoryWatch`, `AddKeywordWatch`, `RemoveWatch`, `GetWatchlist`, `ProvisionUser` handlers; `DealCreatedNotificationHandler`; `DealCreatedScoreHandler`; `DealScoreCalculator`; `Logging` + `Validation` pipeline behaviors.
-- Infra: `ApplicationDbContext` (all DbSets), `DealRepository`, `DealVoteRepository`, `TenantRepository`, `CategoryRepository`, `UserRepository`, `WatchlistRepository`, `NotificationPreferenceRepository`, `PendingAlertRepository`, `AffiliateUrlRewriter`, `ResendEmailService`, `DealUrlHealthCheckJob`, `DailyDigestJob`, `DealScoreRecalculationJob`, `TenantResolutionMiddleware`, `OutputCacheInvalidator`. Auto-migration on startup via `UseInfrastructure()`.
-- Web: `Home`, `DealDetail`, `DealCard`, `VoteButton`, `ExpireReportButton`, `WatchCategoryButton`, `AdUnit`, `MainLayout`, `CategoryList`, `CategoryDetail`, `Watchlist`, `NotificationSettings`, `AdminDealList`, `AdminDealNew`; **Google OAuth is wired** in `Program.cs`; output cache (3 policies); Hangfire dashboard; AdSense (config-driven, disabled by default).
-- Tests: `DealTests`, `CreateDealCommandHandlerTests`, `CastVoteCommandHandlerTests`, `DealCreatedNotificationHandlerTests`, `DealScoreCalculatorTests`, `DealCreatedScoreHandlerTests`, `AddCategoryWatchCommandHandlerTests`, `RemoveWatchCommandHandlerTests`, `ProvisionUserCommandHandlerTests`, `CacheInvalidationHandlerTests`. Migrations: `InitialCreate`, `AddUserAndCategoryConfigurations`, `AddWatchlistEntryConfiguration`, `AddDealVotingAndNotifications`. Auto-applied on startup.
+- App: `CreateDeal`, `ReportDealExpired`, `ExpireDeal`, `GetDeals`, `CastVote`, `GetDealVote`, `GetPreferences`, `UpdatePreferences`, `AddCategoryWatch`, `AddKeywordWatch`, `RemoveWatch`, `GetWatchlist`, `ProvisionUser` handlers; `DealCreatedNotificationHandler`; `DealPriceDropNotificationHandler`; `DealCreatedScoreHandler`; `DealScoreCalculator`; `RecordPriceSnapshotHandler`; `GetPriceHistoryQuery`; `UpdateDealPriceCommand`; `Logging` + `Validation` pipeline behaviors.
+- Infra: `ApplicationDbContext` (all DbSets), `DealRepository`, `DealVoteRepository`, `TenantRepository`, `CategoryRepository`, `UserRepository`, `WatchlistRepository`, `NotificationPreferenceRepository`, `PendingAlertRepository`, `PriceSnapshotRepository`, `AffiliateUrlRewriter`, `ResendEmailService`, `DealUrlHealthCheckJob`, `DailyDigestJob`, `DealScoreRecalculationJob`, `TenantResolutionMiddleware`, `OutputCacheInvalidator`. Auto-migration on startup via `UseInfrastructure()`.
+- Web: `Home`, `DealDetail` (with price history chart), `DealCard`, `VoteButton`, `ExpireReportButton`, `WatchCategoryButton`, `AdUnit`, `MainLayout`, `CategoryList`, `CategoryDetail`, `Watchlist`, `NotificationSettings`, `AdminDealList`, `AdminDealNew`, `AdminDealPrice`; **Google OAuth is wired** in `Program.cs`; output cache (3 policies); Hangfire dashboard; AdSense (config-driven, disabled by default).
+- Tests: `DealTests`, `CreateDealCommandHandlerTests`, `CastVoteCommandHandlerTests`, `DealCreatedNotificationHandlerTests`, `DealPriceDropNotificationHandlerTests`, `DealScoreCalculatorTests`, `DealCreatedScoreHandlerTests`, `AddCategoryWatchCommandHandlerTests`, `RemoveWatchCommandHandlerTests`, `ProvisionUserCommandHandlerTests`, `CacheInvalidationHandlerTests`, `UpdateDealPriceCommandHandlerTests`, `RecordPriceSnapshotHandlerTests`. Migrations: `InitialCreate`, `AddUserAndCategoryConfigurations`, `AddWatchlistEntryConfiguration`, `AddDealVotingAndNotifications`, **`AddPriceSnapshots` (pending generation)**. Auto-applied on startup.
 
 **Domain-only stubs (entity exists, nothing consumes it)**
 - `AffiliateNetwork` — no repository, handler, EF config, or UI.
@@ -37,8 +37,8 @@ Docs (`DOCUMENTATION.md` §23) drift from code. Actual state:
 | 07 | Admin deal submission UI | 2 | 01 | ✅ Done |
 | 08 | Category browse pages | 2 | — | ✅ Done |
 | 09 | Output cache invalidation | 2 | 00 | ✅ Done |
-| 10 | Price history | 3 | 00 | |
-| 11 | Price drop alerts | 3 | 02, 03, 10 | |
+| 10 | Price history | 3 | 00 | ✅ Done |
+| 11 | Price drop alerts | 3 | 02, 03, 10 | ✅ Done |
 | 12 | Community submissions & approval | 3 | 01, 07 | |
 | 13 | User reputation | 3 | 04, 12 | |
 | 14 | Web push notifications | 3 | 01, 03 | |

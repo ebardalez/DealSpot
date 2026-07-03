@@ -50,6 +50,7 @@
                         <td>
                             @if (deal.Status == DealStatus.Active)
                             {
+                                <a href="/admin/deals/@deal.Id/price" class="btn btn--sm">Price</a>
                                 <button class="btn btn--danger btn--sm" @onclick="() => ExpireAsync(deal.Id)">Expire</button>
                             }
                             else

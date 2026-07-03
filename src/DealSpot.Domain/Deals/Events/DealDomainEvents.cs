@@ -8,3 +8,11 @@ public sealed record DealExpiredDomainEvent(
     Guid DealId,
     Guid TenantId,
     DealExpiredReason Reason) : IDomainEvent;
+
+public sealed record DealPriceChangedDomainEvent(
+    Guid DealId,
+    Guid TenantId,
+    decimal OldPrice,
+    decimal NewPrice,
+    decimal? NewOriginalPrice,
+    string Currency) : IDomainEvent;

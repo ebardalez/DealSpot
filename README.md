@@ -15,7 +15,7 @@ src/
   DealSpot.ServiceDefaults/   # Shared telemetry, health checks, service discovery
 tests/
   DealSpot.Domain.Tests/      # 10 domain unit tests
-  DealSpot.Application.Tests/ # 26 application unit tests
+  DealSpot.Application.Tests/ # ~35 application unit tests
 specs/                        # Feature specs (one per feature)
 docker/
   Dockerfile
@@ -175,7 +175,7 @@ dotnet test tests/DealSpot.Application.Tests
 dotnet test tests/DealSpot.Domain.Tests
 ```
 
-32 tests total (26 application + 10 domain). xUnit + NSubstitute + FluentAssertions.
+~45 tests total (~35 application + 10 domain). xUnit + NSubstitute + FluentAssertions.
 
 ## Features
 
@@ -203,9 +203,9 @@ dotnet test tests/DealSpot.Domain.Tests
 - [x] Deal Score calculation (discount % + retailer trust + vote velocity)
 - [x] AdSense integration
 
-### Phase 3 -- Intelligence (planned)
-- [ ] Price history (Keepa API for Amazon + custom scrapers)
-- [ ] Price drop alerts (watchlist + price history triggers)
+### Phase 3 -- Intelligence (in progress)
+- [x] Price history tracking + admin price update UI + bar chart on deal detail
+- [x] Price drop alerts (watchlist + price change triggers)
 - [ ] Community deal submissions + approval queue
 - [ ] User reputation system (vote + submission based)
 - [ ] Web push notifications

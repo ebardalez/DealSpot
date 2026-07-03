@@ -166,6 +166,7 @@ The core aggregate of the system. Located at `DealSpot.Domain/Deals/Deal.cs`.
 - `ReportAsExpired()` on an already-expired deal returns `DealErrors.AlreadyExpired`
 - `DealCreatedDomainEvent` is raised on creation
 - `DealExpiredDomainEvent` is raised on expiration (with reason: `Manual`, `CommunityReported`, `UrlDead`, `Scheduled`)
+- `DealPriceChangedDomainEvent` is raised when price is updated via `UpdatePrice()` (carries old/new price)
 
 ### Value Object: DealPrice
 
@@ -269,6 +270,19 @@ AffiliateTag:   "techdeals-20"
 UrlTemplate:    "{url}?tag={tag}"
 ```
 
+### Entity: PriceSnapshot
+
+Records a deal's price at a point in time. Created automatically via domain event handlers when a deal is created (`source: "initial"`) or when an admin updates a deal's price (`source: "admin_update"`). Future scraper jobs will add `source: "scraper"` snapshots.
+
+| Property | Type | Description |
+|---|---|---|
+| `DealId` | `Guid` | Which deal this snapshot belongs to |
+| `Price` | `decimal` | Current price at time of recording |
+| `OriginalPrice` | `decimal?` | Original/MSRP price at time of recording |
+| `Currency` | `string` | 3-letter ISO currency code |
+| `Source` | `string` | "initial", "admin_update", or "scraper" |
+| `RecordedAtUtc` | `DateTime` | When the snapshot was taken |
+
 ---
 
 ## 4. Application Layer — CQRS
@@ -281,12 +295,14 @@ All use cases live in `DealSpot.Application` as MediatR commands and queries. Th
 |---|---|---|
 | `CreateDealCommand` | `CreateDealCommandHandler` | Validates category ownership, rewrites affiliate URL, generates slug, persists deal |
 | `ReportDealExpiredCommand` | `ReportDealExpiredCommandHandler` | Increments expired report count; auto-expires at 5 reports |
+| `UpdateDealPriceCommand` | `UpdateDealPriceCommandHandler` | Updates deal price, raises `DealPriceChangedDomainEvent` |
 
 ### Queries
 
 | Query | Handler | What it returns |
 |---|---|---|
 | `GetDealsQuery` | `GetDealsQueryHandler` | Paginated list of active deals for a tenant, optionally filtered by category |
+| `GetPriceHistoryQuery` | `GetPriceHistoryQueryHandler` | Chronological list of price snapshots for a deal |
 
 ### MediatR Pipeline Behaviors
 
@@ -412,6 +428,14 @@ Located in `DealSpot.Web`. Uses .NET 10 Blazor with Static Server-Side Rendering
 |---|---|---|---|
 | `/` | `Home.razor` | Static SSR + StreamRendering | `CategoryPage` (10 min) |
 | `/deals/{slug}` | `DealDetail.razor` | Static SSR | `DealPage` (30 min, varies by slug) |
+
+### Admin Pages
+
+| Route | File | Description |
+|---|---|---|
+| `/admin/deals` | `AdminDealList.razor` | List all deals with expire + price update actions |
+| `/admin/deals/new` | `AdminDealNew.razor` | Create a new deal |
+| `/admin/deals/{id}/price` | `AdminDealPrice.razor` | Update deal price + view price history |
 
 ### Shared Components
 
@@ -658,6 +682,8 @@ Hangfire is backed by PostgreSQL — no separate job queue infrastructure needed
 | Job ID | Schedule | Handler | Purpose |
 |---|---|---|---|
 | `deal-url-health-check` | Every 6 hours | `DealUrlHealthCheckJob` | HTTP HEAD check on active deal URLs; expires dead links |
+| `daily-digest` | Daily 8 AM UTC | `DailyDigestJob` | Sends batched digest emails for digest-mode users |
+| `deal-score-recalculation` | Every 2 hours | `DealScoreRecalculationJob` | Recalculates score for all active deals |
 
 ### Hangfire Dashboard
 
@@ -730,7 +756,7 @@ A composite quality score (0–100) shown as a badge on every deal card and deta
 
 ### Current State
 
-At MVP, `DealScore.NotCalculated` is the default for all deals (value = 0, score badge is hidden). A `DealScoreCalculatorJob` (Phase 2) will populate scores using discount % + retailer trust. Price history data (Phase 3) will add the most powerful signal.
+`DealScoreCalculator` (static class in `Application/Deals/Score/`) computes scores using a weighted formula: 40% discount depth, 30% retailer trust, 30% vote velocity. Initial score is calculated on deal creation via `DealCreatedScoreHandler`. A Hangfire job (`DealScoreRecalculationJob`, every 2h) recalculates all active deals to reflect vote changes. Price history signal is planned for a future phase.
 
 ---
 
@@ -755,6 +781,7 @@ In Docker Compose production: `Host=postgres` (service name).
 | `app_users` | `id`, `email`, `display_name`, `reputation_score` | Domain user entity |
 | `watchlist_entries` | `id`, `user_id`, `tenant_id`, `category_id`, `product_keyword`, `target_price` | User watchlist |
 | `notification_preferences` | `id`, `user_id`, `tenant_id`, `frequency` | Per-user email settings |
+| `price_snapshots` | `id`, `deal_id`, `price`, `original_price`, `currency`, `source`, `recorded_at_utc` | Price history tracking |
 
 Plus ASP.NET Core Identity tables: `AspNetUsers`, `AspNetRoles`, etc.
 
@@ -1099,26 +1126,28 @@ Once you have an established audience, brands pay for featured placement at the 
 - [x] Docker Compose production deployment
 - [x] Health check endpoint
 
-### Phase 2 — Community
-- [ ] Google + Apple social login
-- [ ] Deal watchlist (category watch + keyword watch)
-- [ ] Email alerts via Resend (3 trigger types: new deal, watchlist match, expiring soon)
-- [ ] Daily digest email option
-- [ ] Deal Score calculation (discount + retailer trust + vote velocity)
-- [ ] Upvote / downvote on deals
-- [ ] AdSense integration
-- [ ] Admin deal submission UI
-- [ ] `DealScoreCalculatorJob` background job
+### Phase 2 — Community (complete)
+- [x] Google + Apple social login
+- [x] Deal watchlist (category watch + keyword watch)
+- [x] Email alerts via Resend (3 trigger types: new deal, watchlist match, expiring soon)
+- [x] Daily digest email option
+- [x] Deal Score calculation (discount + retailer trust + vote velocity)
+- [x] Upvote / downvote on deals
+- [x] AdSense integration
+- [x] Admin deal submission UI
+- [x] `DealScoreCalculatorJob` background job
+- [x] Category browse pages
+- [x] Output cache invalidation via cache tags
 
-### Phase 3 — Intelligence
-- [ ] Price history — Keepa API for Amazon products
-- [ ] Price history — custom HTTP scraper for niche retailers (aquarium shops, supplement brands)
-- [ ] Price drop alerts (uses `WatchlistEntry.TargetPrice`)
+### Phase 3 — Intelligence (in progress)
+- [x] Price history — admin price updates recorded as snapshots, bar chart on deal detail
+- [x] Price drop alerts — watchlist + price change triggers, instant + digest delivery
+- [ ] Price history — Keepa API for Amazon products (price scraping job)
+- [ ] Price history — custom HTTP scraper for niche retailers
 - [ ] Full Deal Score incorporating price history signal
 - [ ] Community deal submissions with approval queue
 - [ ] User reputation system
 - [ ] Browser push notifications (Web Push / VAPID)
-- [ ] Output cache invalidation via cache tags on deal creation/expiry
 
 ---
 

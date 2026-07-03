@@ -22,6 +22,7 @@ public sealed class ApplicationDbContext(DbContextOptions<ApplicationDbContext> 
     public DbSet<DealVote> DealVotes => Set<DealVote>();
     public DbSet<UserNotificationPreference> NotificationPreferences => Set<UserNotificationPreference>();
     public DbSet<PendingAlert> PendingAlerts => Set<PendingAlert>();
+    public DbSet<PriceSnapshot> PriceSnapshots => Set<PriceSnapshot>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
