@@ -33,5 +33,12 @@ public sealed class DealRepository(ApplicationDbContext dbContext) : IDealReposi
             .ToListAsync(cancellationToken);
 
     public void Add(Deal deal) => dbContext.Deals.Add(deal);
+
+    public async Task<IReadOnlyList<Deal>> GetByTenantAsync(Guid tenantId, int page, int pageSize, CancellationToken cancellationToken = default) =>
+        await dbContext.Deals
+            .Where(d => d.TenantId == tenantId)
+            .OrderByDescending(d => d.CreatedAtUtc)
+            .Skip((page - 1) * pageSize).Take(pageSize)
+            .ToListAsync(cancellationToken);
     public void Update(Deal deal) => dbContext.Deals.Update(deal);
 }

@@ -76,7 +76,8 @@ namespace DealSpot.Infrastructure.Persistence.Migrations
 
                     b.Property<string>("Name")
                         .IsRequired()
-                        .HasColumnType("text")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
                         .HasColumnName("name");
 
                     b.Property<Guid?>("ParentId")
@@ -85,7 +86,8 @@ namespace DealSpot.Infrastructure.Persistence.Migrations
 
                     b.Property<string>("Slug")
                         .IsRequired()
-                        .HasColumnType("text")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
                         .HasColumnName("slug");
 
                     b.Property<int>("SortOrder")
@@ -98,6 +100,13 @@ namespace DealSpot.Infrastructure.Persistence.Migrations
 
                     b.HasKey("Id")
                         .HasName("pk_categories");
+
+                    b.HasIndex("TenantId", "IsActive")
+                        .HasDatabaseName("ix_categories_tenant_id_is_active");
+
+                    b.HasIndex("TenantId", "Slug")
+                        .IsUnique()
+                        .HasDatabaseName("ix_categories_tenant_id_slug");
 
                     b.ToTable("categories", (string)null);
                 });
@@ -252,7 +261,8 @@ namespace DealSpot.Infrastructure.Persistence.Migrations
                         .HasColumnName("id");
 
                     b.Property<string>("AvatarUrl")
-                        .HasColumnType("text")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)")
                         .HasColumnName("avatar_url");
 
                     b.Property<DateTime>("CreatedAtUtc")
@@ -261,12 +271,14 @@ namespace DealSpot.Infrastructure.Persistence.Migrations
 
                     b.Property<string>("DisplayName")
                         .IsRequired()
-                        .HasColumnType("text")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
                         .HasColumnName("display_name");
 
                     b.Property<string>("Email")
                         .IsRequired()
-                        .HasColumnType("text")
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)")
                         .HasColumnName("email");
 
                     b.Property<bool>("IsActive")
@@ -279,6 +291,10 @@ namespace DealSpot.Infrastructure.Persistence.Migrations
 
                     b.HasKey("Id")
                         .HasName("pk_app_users");
+
+                    b.HasIndex("Email")
+                        .IsUnique()
+                        .HasDatabaseName("ix_app_users_email");
 
                     b.ToTable("app_users", (string)null);
                 });
@@ -340,11 +356,12 @@ namespace DealSpot.Infrastructure.Persistence.Migrations
                         .HasColumnName("is_active");
 
                     b.Property<string>("ProductKeyword")
-                        .HasColumnType("text")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
                         .HasColumnName("product_keyword");
 
                     b.Property<decimal?>("TargetPrice")
-                        .HasColumnType("numeric")
+                        .HasColumnType("numeric(18,2)")
                         .HasColumnName("target_price");
 
                     b.Property<Guid>("TenantId")
@@ -357,6 +374,12 @@ namespace DealSpot.Infrastructure.Persistence.Migrations
 
                     b.HasKey("Id")
                         .HasName("pk_watchlist_entries");
+
+                    b.HasIndex("UserId", "TenantId")
+                        .HasDatabaseName("ix_watchlist_entries_user_id_tenant_id");
+
+                    b.HasIndex("TenantId", "CategoryId", "IsActive")
+                        .HasDatabaseName("ix_watchlist_entries_tenant_id_category_id_is_active");
 
                     b.ToTable("watchlist_entries", (string)null);
                 });

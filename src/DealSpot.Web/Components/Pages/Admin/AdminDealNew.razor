@@ -1,0 +1,159 @@
+@page "/admin/deals/new"
+@using DealSpot.Application.Abstractions.Authentication
+@using DealSpot.Application.Abstractions.Tenancy
+@using DealSpot.Application.Categories.GetCategories
+@using DealSpot.Application.Deals.CreateDeal
+@using MediatR
+@inject ISender Mediator
+@inject ITenantContext TenantContext
+@inject ICurrentUser CurrentUser
+@attribute [Authorize(Policy = "Admin")]
+@rendermode InteractiveServer
+
+<PageTitle>Submit Deal — Admin</PageTitle>
+
+<section class="admin-page">
+    <h1>Submit New Deal</h1>
+
+    @if (_success is not null)
+    {
+        <div class="alert alert--success">
+            <p>Deal created! Slug: <strong>@_success.Slug</strong></p>
+            <p><a href="/deals/@_success.Slug">View Deal</a></p>
+            <p>Affiliate URL: <code>@_success.AffiliateUrl</code></p>
+            <button class="btn btn--secondary" @onclick="Reset">Submit Another</button>
+        </div>
+    }
+    else
+    {
+        @if (!string.IsNullOrEmpty(_error))
+        {
+            <div class="alert alert--error">@_error</div>
+        }
+
+        <EditForm Model="_model" OnValidSubmit="SubmitAsync" FormName="create-deal">
+            <DataAnnotationsValidator />
+
+            <div class="form-group">
+                <label>Category</label>
+                <InputSelect @bind-Value="_model.CategoryId">
+                    <option value="">— Select —</option>
+                    @if (_categories is not null)
+                    {
+                        @foreach (var cat in _categories)
+                        {
+                            <option value="@cat.Id">@cat.Name</option>
+                        }
+                    }
+                </InputSelect>
+            </div>
+
+            <div class="form-group">
+                <label>Title</label>
+                <InputText @bind-Value="_model.Title" />
+            </div>
+
+            <div class="form-group">
+                <label>Description</label>
+                <InputTextArea @bind-Value="_model.Description" rows="3" />
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Current Price</label>
+                    <InputNumber @bind-Value="_model.CurrentPrice" />
+                </div>
+                <div class="form-group">
+                    <label>Original Price (optional)</label>
+                    <InputNumber @bind-Value="_model.OriginalPrice" />
+                </div>
+                <div class="form-group">
+                    <label>Currency</label>
+                    <InputText @bind-Value="_model.Currency" />
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>Product URL</label>
+                <InputText @bind-Value="_model.ProductUrl" />
+            </div>
+
+            <div class="form-group">
+                <label>Image URL (optional)</label>
+                <InputText @bind-Value="_model.ImageUrl" />
+            </div>
+
+            <div class="form-group">
+                <label>Retailer Name</label>
+                <InputText @bind-Value="_model.RetailerName" />
+            </div>
+
+            <button type="submit" class="btn btn--primary" disabled="@_submitting">
+                @(_submitting ? "Submitting..." : "Create Deal")
+            </button>
+        </EditForm>
+    }
+</section>
+
+@code {
+    private DealFormModel _model = new();
+    private IReadOnlyList<CategoryDto>? _categories;
+    private CreateDealResponse? _success;
+    private string? _error;
+    private bool _submitting;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var result = await Mediator.Send(new GetCategoriesQuery(TenantContext.Current.Id));
+        if (result.IsSuccess) _categories = result.Value;
+    }
+
+    private async Task SubmitAsync()
+    {
+        _submitting = true;
+        _error = null;
+
+        var command = new CreateDealCommand(
+            TenantContext.Current.Id,
+            Guid.TryParse(_model.CategoryId, out var catId) ? catId : Guid.Empty,
+            CurrentUser.UserId,
+            _model.Title ?? "",
+            _model.Description ?? "",
+            _model.CurrentPrice,
+            _model.OriginalPrice,
+            _model.Currency ?? "USD",
+            _model.ProductUrl ?? "",
+            string.IsNullOrWhiteSpace(_model.ImageUrl) ? null : _model.ImageUrl,
+            _model.RetailerName ?? "");
+
+        var result = await Mediator.Send(command);
+
+        if (result.IsSuccess)
+            _success = result.Value;
+        else
+            _error = result.Error.Description;
+
+        _submitting = false;
+    }
+
+    private void Reset()
+    {
+        _model = new();
+        _success = null;
+        _error = null;
+    }
+
+    // ponytail: simple model for the form, no separate DTO. Validation runs server-side via FluentValidation.
+    private sealed class DealFormModel
+    {
+        public string? CategoryId { get; set; }
+        public string? Title { get; set; }
+        public string? Description { get; set; }
+        public decimal CurrentPrice { get; set; }
+        public decimal? OriginalPrice { get; set; }
+        public string? Currency { get; set; } = "USD";
+        public string? ProductUrl { get; set; }
+        public string? ImageUrl { get; set; }
+        public string? RetailerName { get; set; }
+    }
+}

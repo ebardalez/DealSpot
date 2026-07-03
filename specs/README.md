@@ -14,14 +14,14 @@ Docs (`DOCUMENTATION.md` §23) drift from code. Actual state:
 - Tests: `DealTests`, `CreateDealCommandHandlerTests`. Migration: `InitialCreate`.
 
 **Domain-only stubs (entity exists, nothing consumes it)**
-- `User`, `WatchlistEntry`, `UserNotificationPreference`, `AffiliateNetwork` — no repositories, handlers, EF configs, or UI.
+- `UserNotificationPreference`, `AffiliateNetwork` — no repositories, handlers, EF configs, or UI.
 
 **Gaps found beyond the roadmap**
 - ~~Domain events raised but never dispatched (`SaveChangesAsync` only calls `base`)~~ → **fixed in 00**.
 - ~~`/categories` linked from `DealDetail` breadcrumb but no page exists~~ → **fixed in 08**.
 - ~~Cache tags declared but never evicted~~ → **fixed in 09**.
 - ~~OAuth sign-in creates no domain `User` row~~ → **fixed in 01**.
-- ~~No EF config for `Category`, `User`~~ → **added** `CategoryConfiguration`, `UserConfiguration`. WatchlistEntry, UserNotificationPreference, AffiliateNetwork remain convention-only (add as each feature lands).
+- ~~No EF config for `Category`, `User`~~ → **added** `CategoryConfiguration`, `UserConfiguration`, `WatchlistEntryConfiguration`. UserNotificationPreference, AffiliateNetwork remain convention-only (add as each feature lands).
 
 ## Index
 
@@ -29,12 +29,12 @@ Docs (`DOCUMENTATION.md` §23) drift from code. Actual state:
 |---|------|-------|-----------|--------|
 | 00 | Domain event dispatch | Foundation | — | ✅ Done |
 | 01 | User accounts & auth wiring | 2 | — | ✅ Done |
-| 02 | Watchlist | 2 | 01 | |
+| 02 | Watchlist | 2 | 01 | ✅ Done |
 | 03 | Email alerts & preferences | 2 | 00, 01, 02 | |
 | 04 | Deal voting | 2 | 01 | |
 | 05 | Deal Score calculation | 2 | 04 (velocity) | |
 | 06 | AdSense | 2 | — | |
-| 07 | Admin deal submission UI | 2 | 01 | |
+| 07 | Admin deal submission UI | 2 | 01 | ✅ Done |
 | 08 | Category browse pages | 2 | — | ✅ Done |
 | 09 | Output cache invalidation | 2 | 00 | ✅ Done |
 | 10 | Price history | 3 | 00 | |

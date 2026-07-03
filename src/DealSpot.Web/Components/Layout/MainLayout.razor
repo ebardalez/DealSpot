@@ -21,6 +21,11 @@
                     <Authorized>
                         <span class="nav-user-name">@context.User.Identity?.Name</span>
                         <a href="/watchlist">My Watchlist</a>
+                        <AuthorizeView Policy="Admin">
+                            <Authorized Context="adminContext">
+                                <a href="/admin/deals">Admin</a>
+                            </Authorized>
+                        </AuthorizeView>
                         <form action="/auth/logout" method="post">
                             <AntiforgeryToken />
                             <button type="submit">Sign Out</button>

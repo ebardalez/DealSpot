@@ -1,6 +1,6 @@
 # 07 — Admin Deal Submission UI
 
-**Phase:** 2 · **Status:** Not built (handler exists) · **Depends on:** 01
+**Phase:** 2 · **Status:** ✅ Done · **Depends on:** 01
 
 ## Goal
 `CreateDealCommand` + handler exist but there's no way to invoke them. Add an admin-only Blazor form to submit deals (you are the sole submitter at launch).

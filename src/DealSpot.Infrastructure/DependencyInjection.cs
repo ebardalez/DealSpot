@@ -55,6 +55,7 @@ public static class DependencyInjection
         services.AddScoped<ITenantRepository, TenantRepository>();
         services.AddScoped<ICategoryRepository, CategoryRepository>();
         services.AddScoped<IUserRepository, UserRepository>();
+        services.AddScoped<IWatchlistRepository, WatchlistRepository>();
     }
 
     private static void AddBackgroundJobs(IServiceCollection services, IConfiguration configuration)

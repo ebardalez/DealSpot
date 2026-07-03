@@ -1,0 +1,132 @@
+@page "/watchlist"
+@using DealSpot.Application.Abstractions.Tenancy
+@using DealSpot.Application.Watchlist.AddKeywordWatch
+@using DealSpot.Application.Watchlist.GetWatchlist
+@using DealSpot.Application.Watchlist.RemoveWatch
+@using MediatR
+@inject ISender Mediator
+@inject ITenantContext TenantContext
+@attribute [Authorize]
+@rendermode InteractiveServer
+
+<PageTitle>My Watchlist — @TenantContext.Current.Name</PageTitle>
+
+<section class="watchlist-page">
+    <h1>My Watchlist</h1>
+
+    @if (!string.IsNullOrEmpty(_message))
+    {
+        <div class="alert @(_isError ? "alert--error" : "alert--success")">@_message</div>
+    }
+
+    <div class="watchlist-add">
+        <h2>Watch a Keyword</h2>
+        <EditForm Model="_keywordModel" OnValidSubmit="AddKeywordAsync" FormName="add-keyword">
+            <div class="form-row">
+                <div class="form-group">
+                    <InputText @bind-Value="_keywordModel.Keyword" placeholder="e.g. RTX 5090" />
+                </div>
+                <div class="form-group">
+                    <InputNumber @bind-Value="_keywordModel.TargetPrice" placeholder="Target price (optional)" />
+                </div>
+                <button type="submit" class="btn btn--primary" disabled="@_submitting">Watch</button>
+            </div>
+        </EditForm>
+    </div>
+
+    @if (_items is null)
+    {
+        <p>Loading...</p>
+    }
+    else if (_items.Count == 0)
+    {
+        <p class="empty-state">No watches yet. Add a keyword above or watch a <a href="/categories">category</a>.</p>
+    }
+    else
+    {
+        <table class="watchlist-table">
+            <thead>
+                <tr>
+                    <th>Type</th>
+                    <th>Watch</th>
+                    <th>Target Price</th>
+                    <th>Added</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var item in _items)
+                {
+                    <tr>
+                        <td>@item.Type</td>
+                        <td>
+                            @if (item.CategoryName is not null)
+                            {
+                                <a href="/categories/@item.CategorySlug">@item.CategoryName</a>
+                            }
+                            else
+                            {
+                                @item.Keyword
+                            }
+                        </td>
+                        <td>@(item.TargetPrice?.ToString("C") ?? "—")</td>
+                        <td>@item.CreatedAtUtc.ToString("yyyy-MM-dd")</td>
+                        <td>
+                            <button class="btn btn--danger btn--sm" @onclick="() => RemoveAsync(item.Id)">Remove</button>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+</section>
+
+@code {
+    private IReadOnlyList<WatchlistItemDto>? _items;
+    private KeywordFormModel _keywordModel = new();
+    private string? _message;
+    private bool _isError;
+    private bool _submitting;
+
+    protected override async Task OnInitializedAsync() => await LoadAsync();
+
+    private async Task LoadAsync()
+    {
+        var result = await Mediator.Send(new GetWatchlistQuery());
+        if (result.IsSuccess) _items = result.Value;
+    }
+
+    private async Task AddKeywordAsync()
+    {
+        _submitting = true;
+        _message = null;
+        var result = await Mediator.Send(new AddKeywordWatchCommand(_keywordModel.Keyword ?? "", _keywordModel.TargetPrice));
+
+        if (result.IsSuccess)
+        {
+            _message = "Keyword watch added.";
+            _isError = false;
+            _keywordModel = new();
+            await LoadAsync();
+        }
+        else
+        {
+            _message = result.Error.Description;
+            _isError = true;
+        }
+        _submitting = false;
+    }
+
+    private async Task RemoveAsync(Guid id)
+    {
+        var result = await Mediator.Send(new RemoveWatchCommand(id));
+        if (result.IsSuccess) await LoadAsync();
+        else { _message = result.Error.Description; _isError = true; }
+    }
+
+    private sealed class KeywordFormModel
+    {
+        public string? Keyword { get; set; }
+        public decimal? TargetPrice { get; set; }
+    }
+}

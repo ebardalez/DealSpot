@@ -1,0 +1,88 @@
+@page "/admin/deals"
+@using DealSpot.Application.Abstractions.Tenancy
+@using DealSpot.Application.Deals.ExpireDeal
+@using DealSpot.Domain.Categories
+@using DealSpot.Domain.Deals
+@using MediatR
+@inject ISender Mediator
+@inject ITenantContext TenantContext
+@inject IDealRepository DealRepository
+@inject ICategoryRepository CategoryRepository
+@attribute [Authorize(Policy = "Admin")]
+@rendermode InteractiveServer
+
+<PageTitle>Manage Deals — Admin</PageTitle>
+
+<section class="admin-page">
+    <h1>Manage Deals</h1>
+    <p><a href="/admin/deals/new" class="btn btn--primary">+ New Deal</a></p>
+
+    @if (_deals is null)
+    {
+        <p>Loading...</p>
+    }
+    else if (_deals.Count == 0)
+    {
+        <p>No deals yet.</p>
+    }
+    else
+    {
+        <table class="admin-table">
+            <thead>
+                <tr>
+                    <th>Title</th>
+                    <th>Category</th>
+                    <th>Price</th>
+                    <th>Status</th>
+                    <th>Created</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var deal in _deals)
+                {
+                    <tr>
+                        <td><a href="/deals/@deal.Slug">@deal.Title</a></td>
+                        <td>@(_categoryMap.TryGetValue(deal.CategoryId, out var name) ? name : "—")</td>
+                        <td>@deal.Price.CurrentPrice.ToString("C")</td>
+                        <td>@deal.Status</td>
+                        <td>@deal.CreatedAtUtc.ToString("yyyy-MM-dd")</td>
+                        <td>
+                            @if (deal.Status == DealStatus.Active)
+                            {
+                                <button class="btn btn--danger btn--sm" @onclick="() => ExpireAsync(deal.Id)">Expire</button>
+                            }
+                            else
+                            {
+                                <span>Expired</span>
+                            }
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+</section>
+
+@code {
+    private IReadOnlyList<Deal>? _deals;
+    private Dictionary<Guid, string> _categoryMap = [];
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadAsync();
+    }
+
+    private async Task LoadAsync()
+    {
+        _deals = await DealRepository.GetByTenantAsync(TenantContext.Current.Id, 1, 100);
+        var categories = await CategoryRepository.GetByTenantAsync(TenantContext.Current.Id);
+        _categoryMap = categories.ToDictionary(c => c.Id, c => c.Name);
+    }
+
+    private async Task ExpireAsync(Guid dealId)
+    {
+        await Mediator.Send(new ExpireDealCommand(dealId));
+        await LoadAsync();
+    }
+}

@@ -85,7 +85,17 @@ builder.Services.AddAuthentication(options =>
         options.ClaimActions.MapJsonKey("urn:google:picture", "picture");
     });
 
-builder.Services.AddAuthorization();
+builder.Services.AddAuthorization(options =>
+{
+    // ponytail: admin = configured email list, no Identity role seeding. Add roles when more admins needed.
+    var adminEmails = builder.Configuration.GetSection("Auth:AdminEmails").Get<string[]>() ?? [];
+    options.AddPolicy("Admin", policy =>
+        policy.RequireAssertion(ctx =>
+        {
+            var email = ctx.User.FindFirstValue(System.Security.Claims.ClaimTypes.Email);
+            return email is not null && adminEmails.Contains(email, StringComparer.OrdinalIgnoreCase);
+        }));
+});
 builder.Services.AddCascadingAuthenticationState();
 builder.Services.AddHttpContextAccessor();
 

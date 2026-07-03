@@ -1,6 +1,7 @@
 @page "/categories/{categorySlug}"
 @using DealSpot.Application.Abstractions.Tenancy
 @using DealSpot.Application.Deals.GetDeals
+@using DealSpot.Application.Watchlist.AddCategoryWatch
 @using DealSpot.Domain.Categories
 @using MediatR
 @inject ITenantContext TenantContext
@@ -30,6 +31,7 @@ else
         </nav>
 
         <h1>@_category.Name</h1>
+        <WatchCategoryButton CategoryId="@_category.Id" />
 
         @if (_deals is null)
         {

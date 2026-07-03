@@ -1,6 +1,6 @@
 # 02 — Watchlist
 
-**Phase:** 2 · **Status:** Domain-only stub · **Depends on:** 01
+**Phase:** 2 · **Status:** ✅ Done · **Depends on:** 01
 
 ## Goal
 Let signed-in users watch a category or a keyword (with optional target price). Backs email alerts (03) and price-drop alerts (11). `WatchlistEntry` entity + factories already exist; add repository, use cases, and UI.

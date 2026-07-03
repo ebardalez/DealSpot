@@ -1,0 +1,50 @@
+@using DealSpot.Application.Watchlist.AddCategoryWatch
+@using MediatR
+@inject ISender Mediator
+@rendermode InteractiveServer
+
+<div class="watch-category">
+    <AuthorizeView>
+        <Authorized>
+            @if (_added)
+            {
+                <span class="watch-category__confirmed">✓ Watching</span>
+            }
+            else
+            {
+                <button class="btn btn--secondary btn--sm" @onclick="WatchAsync" disabled="@_loading">
+                    @(_loading ? "..." : "👁 Watch Category")
+                </button>
+                @if (_error is not null)
+                {
+                    <span class="watch-category__error">@_error</span>
+                }
+            }
+        </Authorized>
+        <NotAuthorized>
+            <a href="/auth/login/Google" class="btn btn--secondary btn--sm">Sign in to watch</a>
+        </NotAuthorized>
+    </AuthorizeView>
+</div>
+
+@code {
+    [Parameter, EditorRequired] public Guid CategoryId { get; set; }
+
+    private bool _loading;
+    private bool _added;
+    private string? _error;
+
+    private async Task WatchAsync()
+    {
+        _loading = true;
+        _error = null;
+        var result = await Mediator.Send(new AddCategoryWatchCommand(CategoryId));
+
+        if (result.IsSuccess)
+            _added = true;
+        else
+            _error = result.Error.Description;
+
+        _loading = false;
+    }
+}
