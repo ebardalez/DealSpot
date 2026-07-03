@@ -254,6 +254,50 @@ namespace DealSpot.Infrastructure.Persistence.Migrations
                     b.ToTable("deal_votes", (string)null);
                 });
 
+            modelBuilder.Entity("DealSpot.Domain.Deals.PriceSnapshot", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<string>("Currency")
+                        .IsRequired()
+                        .HasMaxLength(3)
+                        .HasColumnType("character varying(3)")
+                        .HasColumnName("currency");
+
+                    b.Property<Guid>("DealId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("deal_id");
+
+                    b.Property<decimal?>("OriginalPrice")
+                        .HasColumnType("numeric(18,2)")
+                        .HasColumnName("original_price");
+
+                    b.Property<decimal>("Price")
+                        .HasColumnType("numeric(18,2)")
+                        .HasColumnName("price");
+
+                    b.Property<DateTime>("RecordedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("recorded_at_utc");
+
+                    b.Property<string>("Source")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("source");
+
+                    b.HasKey("Id")
+                        .HasName("pk_price_snapshots");
+
+                    b.HasIndex("DealId", "RecordedAtUtc")
+                        .HasDatabaseName("ix_price_snapshots_deal_id_recorded_at_utc");
+
+                    b.ToTable("price_snapshots", (string)null);
+                });
+
             modelBuilder.Entity("DealSpot.Domain.Tenants.Tenant", b =>
                 {
                     b.Property<Guid>("Id")
