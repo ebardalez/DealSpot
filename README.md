@@ -15,7 +15,7 @@ src/
   DealSpot.ServiceDefaults/   # Shared telemetry, health checks, service discovery
 tests/
   DealSpot.Domain.Tests/      # 10 domain unit tests
-  DealSpot.Application.Tests/ # 22 application unit tests
+  DealSpot.Application.Tests/ # 26 application unit tests
 specs/                        # Feature specs (one per feature)
 docker/
   Dockerfile
@@ -83,22 +83,20 @@ Set `DealSpot.AppHost` as the startup project and press F5. This will:
 - Launch the Aspire dashboard (opens automatically in browser)
 - Start `DealSpot.Web`
 
-**3. Apply EF Core migrations**
+**3. Migrations run automatically**
 
-Stop the AppHost (Shift+F5), then run from the solution root:
+EF Core migrations run automatically when the web app starts (via `UseInfrastructure()`). The AppHost's `.WaitFor(db)` ensures PostgreSQL is ready before the app boots. No manual `dotnet ef database update` needed for local dev.
+
+To **add a new migration** (after changing entities/configurations):
 
 ```cmd
-"%USERPROFILE%\.dotnet\tools\dotnet-ef.exe" database update ^
+"%USERPROFILE%\.dotnet\.tools\dotnet-ef.exe" migrations add MigrationName ^
   --project src\DealSpot.Infrastructure ^
   --startup-project src\DealSpot.Web ^
-  --connection "Host=localhost;Port=5432;Database=dealspot;Username=postgres;Password=your-password-here"
+  --output-dir Persistence/Migrations
 ```
 
-If `dotnet-ef` is not installed:
-
-```cmd
-"C:\Program Files\dotnet\dotnet.exe" tool install --global dotnet-ef
-```
+The next app startup will apply it automatically.
 
 **4. Seed a dev tenant**
 
@@ -117,7 +115,9 @@ VALUES (
 );
 ```
 
-**5. Start the AppHost again and browse to the app URL shown in the dashboard.**
+**5. Start the AppHost and browse to the app URL shown in the dashboard.**
+
+Migrations will be applied automatically on first startup.
 
 ---
 
@@ -130,7 +130,7 @@ VALUES (
   --output-dir Persistence/Migrations
 ```
 
-Then apply with `database update` as in step 3.
+The migration will be applied automatically on the next app startup. No manual `database update` needed.
 
 ---
 
@@ -175,7 +175,7 @@ dotnet test tests/DealSpot.Application.Tests
 dotnet test tests/DealSpot.Domain.Tests
 ```
 
-32 tests total (22 application + 10 domain). xUnit + NSubstitute + FluentAssertions.
+32 tests total (26 application + 10 domain). xUnit + NSubstitute + FluentAssertions.
 
 ## Features
 
@@ -200,8 +200,8 @@ dotnet test tests/DealSpot.Domain.Tests
 - [x] Deal voting -- upvote/downvote with denormalized counts, `VoteButton` component
 - [x] Email alerts -- instant + daily digest via Resend, `DealCreatedNotificationHandler`
 - [x] Notification preferences -- per-user toggles + frequency (`/settings/notifications`)
-- [ ] Deal Score calculation (discount % + retailer trust + vote velocity)
-- [ ] AdSense integration
+- [x] Deal Score calculation (discount % + retailer trust + vote velocity)
+- [x] AdSense integration
 
 ### Phase 3 -- Intelligence (planned)
 - [ ] Price history (Keepa API for Amazon + custom scrapers)

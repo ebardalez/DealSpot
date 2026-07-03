@@ -1,0 +1,35 @@
+@using Microsoft.Extensions.Options
+@inject IOptions<DealSpot.Web.AdSenseOptions> AdOptions
+
+@* ponytail: no-op when disabled or slot missing. Zero overhead in dev. *@
+@if (AdOptions.Value.Enabled && !string.IsNullOrEmpty(_slotId))
+{
+    <div class="ad-unit ad-unit--@Placement">
+        <ins class="adsbygoogle"
+             style="display:block"
+             data-ad-client="@AdOptions.Value.ClientId"
+             data-ad-slot="@_slotId"
+             data-ad-format="@Format"
+             data-full-width-responsive="true"></ins>
+        <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
+    </div>
+}
+
+@code {
+    [Parameter, EditorRequired] public string Placement { get; set; } = string.Empty;
+    [Parameter] public string Format { get; set; } = "auto";
+
+    private string? _slotId;
+
+    protected override void OnParametersSet()
+    {
+        var opts = AdOptions.Value;
+        _slotId = Placement switch
+        {
+            "deal-detail" => opts.SlotDealDetail,
+            "feed-inline" => opts.SlotFeedInline,
+            "sidebar" => opts.SlotSidebar,
+            _ => null
+        };
+    }
+}

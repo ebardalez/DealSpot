@@ -8,10 +8,10 @@ Docs (`DOCUMENTATION.md` §23) drift from code. Actual state:
 
 **Built & wired**
 - Domain: `Deal`, `Tenant`, `Category`, `User`, `WatchlistEntry`, `UserNotificationPreference`, `AffiliateNetwork`.
-- App: `CreateDeal`, `ReportDealExpired`, `ExpireDeal`, `GetDeals`, `CastVote`, `GetDealVote`, `GetPreferences`, `UpdatePreferences`, `AddCategoryWatch`, `AddKeywordWatch`, `RemoveWatch`, `GetWatchlist`, `ProvisionUser` handlers; `DealCreatedNotificationHandler`; `Logging` + `Validation` pipeline behaviors.
-- Infra: `ApplicationDbContext` (all DbSets), `DealRepository`, `DealVoteRepository`, `TenantRepository`, `CategoryRepository`, `UserRepository`, `WatchlistRepository`, `NotificationPreferenceRepository`, `PendingAlertRepository`, `AffiliateUrlRewriter`, `ResendEmailService`, `DealUrlHealthCheckJob`, `DailyDigestJob`, `TenantResolutionMiddleware`, `OutputCacheInvalidator`.
-- Web: `Home`, `DealDetail`, `DealCard`, `VoteButton`, `ExpireReportButton`, `WatchCategoryButton`, `MainLayout`, `CategoryList`, `CategoryDetail`, `Watchlist`, `NotificationSettings`, `AdminDealList`, `AdminDealNew`; **Google OAuth is wired** in `Program.cs`; output cache (3 policies); Hangfire dashboard.
-- Tests: `DealTests`, `CreateDealCommandHandlerTests`, `CastVoteCommandHandlerTests`, `DealCreatedNotificationHandlerTests`, `AddCategoryWatchCommandHandlerTests`, `RemoveWatchCommandHandlerTests`, `ProvisionUserCommandHandlerTests`, `CacheInvalidationHandlerTests`. Migrations: `InitialCreate`, `AddUserAndCategoryConfigurations`, `AddWatchlistEntryConfiguration`, `AddDealVotingAndNotifications`.
+- App: `CreateDeal`, `ReportDealExpired`, `ExpireDeal`, `GetDeals`, `CastVote`, `GetDealVote`, `GetPreferences`, `UpdatePreferences`, `AddCategoryWatch`, `AddKeywordWatch`, `RemoveWatch`, `GetWatchlist`, `ProvisionUser` handlers; `DealCreatedNotificationHandler`; `DealCreatedScoreHandler`; `DealScoreCalculator`; `Logging` + `Validation` pipeline behaviors.
+- Infra: `ApplicationDbContext` (all DbSets), `DealRepository`, `DealVoteRepository`, `TenantRepository`, `CategoryRepository`, `UserRepository`, `WatchlistRepository`, `NotificationPreferenceRepository`, `PendingAlertRepository`, `AffiliateUrlRewriter`, `ResendEmailService`, `DealUrlHealthCheckJob`, `DailyDigestJob`, `DealScoreRecalculationJob`, `TenantResolutionMiddleware`, `OutputCacheInvalidator`. Auto-migration on startup via `UseInfrastructure()`.
+- Web: `Home`, `DealDetail`, `DealCard`, `VoteButton`, `ExpireReportButton`, `WatchCategoryButton`, `AdUnit`, `MainLayout`, `CategoryList`, `CategoryDetail`, `Watchlist`, `NotificationSettings`, `AdminDealList`, `AdminDealNew`; **Google OAuth is wired** in `Program.cs`; output cache (3 policies); Hangfire dashboard; AdSense (config-driven, disabled by default).
+- Tests: `DealTests`, `CreateDealCommandHandlerTests`, `CastVoteCommandHandlerTests`, `DealCreatedNotificationHandlerTests`, `DealScoreCalculatorTests`, `DealCreatedScoreHandlerTests`, `AddCategoryWatchCommandHandlerTests`, `RemoveWatchCommandHandlerTests`, `ProvisionUserCommandHandlerTests`, `CacheInvalidationHandlerTests`. Migrations: `InitialCreate`, `AddUserAndCategoryConfigurations`, `AddWatchlistEntryConfiguration`, `AddDealVotingAndNotifications`. Auto-applied on startup.
 
 **Domain-only stubs (entity exists, nothing consumes it)**
 - `AffiliateNetwork` — no repository, handler, EF config, or UI.
@@ -32,8 +32,8 @@ Docs (`DOCUMENTATION.md` §23) drift from code. Actual state:
 | 02 | Watchlist | 2 | 01 | ✅ Done |
 | 03 | Email alerts & preferences | 2 | 00, 01, 02 | ✅ Done |
 | 04 | Deal voting | 2 | 01 | ✅ Done |
-| 05 | Deal Score calculation | 2 | 04 (velocity) | |
-| 06 | AdSense | 2 | — | |
+| 05 | Deal Score calculation | 2 | 04 (velocity) | ✅ Done |
+| 06 | AdSense | 2 | — | ✅ Done |
 | 07 | Admin deal submission UI | 2 | 01 | ✅ Done |
 | 08 | Category browse pages | 2 | — | ✅ Done |
 | 09 | Output cache invalidation | 2 | 00 | ✅ Done |

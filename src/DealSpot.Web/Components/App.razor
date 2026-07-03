@@ -8,5 +8,15 @@
 <body>
     <Routes />
     <script src="_framework/blazor.web.js"></script>
+    @* AdSense global script — only loads when configured *@
+    @if (!string.IsNullOrEmpty(AdSenseClientId))
+    {
+        <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=@AdSenseClientId" crossorigin="anonymous"></script>
+    }
 </body>
 </html>
+
+@code {
+    [Inject] private IConfiguration Configuration { get; set; } = default!;
+    private string? AdSenseClientId => Configuration["AdSense:ClientId"];
+}

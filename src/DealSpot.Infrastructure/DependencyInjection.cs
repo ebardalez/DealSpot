@@ -22,6 +22,7 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Resend;
 
 namespace DealSpot.Infrastructure;
@@ -113,6 +114,23 @@ public static class DependencyInjection
 
     public static WebApplication UseInfrastructure(this WebApplication app)
     {
+        // ponytail: auto-migrate on startup. Aspire ensures DB container is ready (WaitFor).
+        // Safe for single-instance deploys. Add a migration lock if scaling to multiple replicas.
+        using (var scope = app.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+            var logger = scope.ServiceProvider.GetRequiredService<ILogger<ApplicationDbContext>>();
+            try
+            {
+                db.Database.Migrate();
+                logger.LogInformation("Database migration completed successfully");
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "Database migration failed");
+                throw;
+            }
+        }
         RecurringJob.AddOrUpdate<DealUrlHealthCheckJob>(
             "deal-url-health-check",
             job => job.ExecuteAsync(CancellationToken.None),
@@ -122,6 +140,11 @@ public static class DependencyInjection
             "daily-digest",
             job => job.ExecuteAsync(CancellationToken.None),
             Cron.Daily(8)); // 8 AM UTC
+
+        RecurringJob.AddOrUpdate<DealScoreRecalculationJob>(
+            "deal-score-recalculation",
+            job => job.ExecuteAsync(CancellationToken.None),
+            "0 */2 * * *"); // Every 2 hours
 
         return app;
     }

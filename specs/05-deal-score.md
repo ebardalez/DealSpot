@@ -1,6 +1,6 @@
 # 05 — Deal Score Calculation
 
-**Phase:** 2 · **Status:** Not built (value object + labels exist) · **Depends on:** 04 (velocity)
+**Phase:** 2 · **Status:** ✅ Done · **Depends on:** 04 (velocity)
 
 ## Goal
 Populate `DealScore` (0–100) so the badge shows. `DealScore` record, component fields, `Label`, and `Deal.UpdateDealScore(...)` already exist and the UI already hides the badge when value is 0. Compute the score.

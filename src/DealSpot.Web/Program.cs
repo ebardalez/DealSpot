@@ -27,6 +27,7 @@ builder.Services.AddRazorComponents()
 // ─── Application + Infrastructure ───────────────────────────────────────────
 builder.Services.AddApplication();
 builder.Services.AddInfrastructure(builder.Configuration);
+builder.Services.Configure<DealSpot.Web.AdSenseOptions>(builder.Configuration.GetSection(DealSpot.Web.AdSenseOptions.SectionName));
 
 // ─── Output Caching (.NET 10) ────────────────────────────────────────────────
 builder.AddRedisOutputCache("redis");

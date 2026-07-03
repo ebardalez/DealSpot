@@ -1,6 +1,6 @@
 # 06 — Google AdSense
 
-**Phase:** 2 · **Status:** Not built · **Depends on:** —
+**Phase:** 2 · **Status:** ✅ Done · **Depends on:** —
 
 ## Goal
 Display AdSense units (sidebar, below deal description) without hurting the "Get This Deal" click. Per-tenant enable + slot IDs. No interstitials.
