@@ -403,3 +403,4 @@ FodyWeavers.xsd
 # Local dev secrets
 src/DealSpot.AppHost/appsettings.Development.json
 src/DealSpot.Web/appsettings.Development.json
+HANDOFF.md
