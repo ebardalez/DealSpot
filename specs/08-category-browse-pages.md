@@ -1,6 +1,6 @@
 # 08 — Category Browse Pages
 
-**Phase:** 2 · **Status:** Not built (linked, 404s today) · **Depends on:** —
+**Phase:** 2 · **Status:** ✅ Done · **Depends on:** —
 
 ## Goal
 `DealDetail` breadcrumb links to `/categories` and `/categories/{slug}` but no page exists → dead links, and `GetDealsQuery` already supports category filtering that nothing calls. Add category listing + category deal feed. Fixes the empty `CategoryName` in `DealSummaryDto`.

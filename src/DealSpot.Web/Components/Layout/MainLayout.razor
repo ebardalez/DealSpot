@@ -19,6 +19,7 @@
             <div class="nav-auth">
                 <AuthorizeView>
                     <Authorized>
+                        <span class="nav-user-name">@context.User.Identity?.Name</span>
                         <a href="/watchlist">My Watchlist</a>
                         <form action="/auth/logout" method="post">
                             <AntiforgeryToken />

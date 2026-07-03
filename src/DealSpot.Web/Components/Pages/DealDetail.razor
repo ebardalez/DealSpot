@@ -47,7 +47,7 @@ else
             "@@type": "BreadcrumbList",
             "itemListElement": [
                 { "@@type": "ListItem", "position": 1, "name": "Home", "item": "https://@TenantContext.Current.Domain" },
-                { "@@type": "ListItem", "position": 2, "name": "@_deal.CategoryName" },
+                { "@@type": "ListItem", "position": 2, "name": "@_deal.CategoryName", "item": "https://@TenantContext.Current.Domain/categories/@_deal.CategorySlug" },
                 { "@@type": "ListItem", "position": 3, "name": "@_deal.Title" }
             ]
         }
@@ -57,7 +57,7 @@ else
     <article class="deal-detail">
         <nav class="breadcrumb" aria-label="Breadcrumb">
             <a href="/">Home</a> &rsaquo;
-            <a href="/categories">@_deal.CategoryName</a> &rsaquo;
+            <a href="/categories/@_deal.CategorySlug">@_deal.CategoryName</a> &rsaquo;
             <span>@_deal.Title</span>
         </nav>
 

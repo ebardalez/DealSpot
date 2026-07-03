@@ -1,6 +1,6 @@
 # 00 — Domain Event Dispatch (Foundation)
 
-**Phase:** Foundation · **Status:** Not built · **Depends on:** —
+**Phase:** Foundation · **Status:** ✅ Done · **Depends on:** —
 
 ## Goal
 Deals raise `DealCreatedDomainEvent` / `DealExpiredDomainEvent`, but `ApplicationDbContext.SaveChangesAsync` only calls `base`. Events are never published, so nothing reacts to them. Dispatch domain events after save so email alerts (03), cache invalidation (09), and score recalculation (05) can subscribe.

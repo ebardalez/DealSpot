@@ -1,6 +1,6 @@
 # 01 — User Accounts & Auth Wiring
 
-**Phase:** 2 · **Status:** Partial (OAuth cookie works; no domain user) · **Depends on:** —
+**Phase:** 2 · **Status:** ✅ Done · **Depends on:** —
 
 ## Goal
 Google OAuth is wired in `Program.cs` but sign-in produces only an Identity cookie — no domain `User` row, so watchlist/voting/reputation have nothing to attach to. Provision a domain `User` on first login, expose current-user context, and add login/logout UI.

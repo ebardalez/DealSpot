@@ -1,10 +1,15 @@
 ﻿using DealSpot.Application;
+using DealSpot.Application.Abstractions.Caching;
+using DealSpot.Application.Users.ProvisionUser;
 using DealSpot.Infrastructure;
+using DealSpot.Infrastructure.Caching;
 using DealSpot.Infrastructure.Tenancy;
 using DealSpot.Web;
 using Hangfire;
+using MediatR;
 using Microsoft.AspNetCore.Authentication;
 using Serilog;
+using System.Security.Claims;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -39,6 +44,7 @@ builder.Services.AddOutputCache(options =>
               .SetVaryByRouteValue("categorySlug")
               .Tag("categories"));
 });
+builder.Services.AddSingleton<ICacheInvalidator, OutputCacheInvalidator>();
 
 // ─── Authentication (Social Login) ──────────────────────────────────────────
 builder.Services.AddAuthentication(options =>
@@ -52,11 +58,31 @@ builder.Services.AddAuthentication(options =>
         options.LogoutPath = "/auth/logout";
         options.ExpireTimeSpan = TimeSpan.FromDays(30);
         options.SlidingExpiration = true;
+        options.Events.OnSigningIn = async context =>
+        {
+            // ponytail: provision domain User inline on cookie sign-in, no separate callback endpoint
+            var email = context.Principal?.FindFirstValue(ClaimTypes.Email);
+            var name = context.Principal?.FindFirstValue(ClaimTypes.Name) ?? email ?? "User";
+            var avatar = context.Principal?.FindFirstValue("urn:google:picture");
+
+            if (!string.IsNullOrEmpty(email))
+            {
+                var mediator = context.HttpContext.RequestServices.GetRequiredService<ISender>();
+                var result = await mediator.Send(new ProvisionUserCommand(email, name, avatar));
+
+                if (result.IsSuccess)
+                {
+                    var identity = (ClaimsIdentity)context.Principal!.Identity!;
+                    identity.AddClaim(new Claim("app_user_id", result.Value.ToString()));
+                }
+            }
+        };
     })
     .AddGoogle(options =>
     {
         options.ClientId = builder.Configuration["Auth:Google:ClientId"]!;
         options.ClientSecret = builder.Configuration["Auth:Google:ClientSecret"]!;
+        options.ClaimActions.MapJsonKey("urn:google:picture", "picture");
     });
 
 builder.Services.AddAuthorization();

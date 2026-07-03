@@ -1,0 +1,48 @@
+@page "/categories"
+@using DealSpot.Application.Abstractions.Tenancy
+@using DealSpot.Application.Categories.GetCategories
+@using MediatR
+@inject ITenantContext TenantContext
+@inject ISender Mediator
+@attribute [Microsoft.AspNetCore.OutputCaching.OutputCache(PolicyName = "CategoryPage")]
+
+<PageTitle>Categories — @TenantContext.Current.Name</PageTitle>
+
+<HeadContent>
+    <meta name="description" content="Browse deal categories on @TenantContext.Current.Name" />
+    <link rel="canonical" href="https://@TenantContext.Current.Domain/categories" />
+</HeadContent>
+
+<section class="categories-page">
+    <h1>Categories</h1>
+
+    @if (_categories is null)
+    {
+        <p>Loading categories...</p>
+    }
+    else if (!_categories.Any())
+    {
+        <p class="empty-state">No categories yet.</p>
+    }
+    else
+    {
+        <div class="categories-grid">
+            @foreach (var category in _categories)
+            {
+                <a href="/categories/@category.Slug" class="category-card">
+                    <h2>@category.Name</h2>
+                </a>
+            }
+        </div>
+    }
+</section>
+
+@code {
+    private IReadOnlyList<CategoryDto>? _categories;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var result = await Mediator.Send(new GetCategoriesQuery(TenantContext.Current.Id));
+        if (result.IsSuccess) _categories = result.Value;
+    }
+}

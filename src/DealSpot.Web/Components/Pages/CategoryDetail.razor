@@ -1,0 +1,78 @@
+@page "/categories/{categorySlug}"
+@using DealSpot.Application.Abstractions.Tenancy
+@using DealSpot.Application.Deals.GetDeals
+@using DealSpot.Domain.Categories
+@using MediatR
+@inject ITenantContext TenantContext
+@inject ISender Mediator
+@inject ICategoryRepository CategoryRepository
+@inject NavigationManager Nav
+@attribute [Microsoft.AspNetCore.OutputCaching.OutputCache(PolicyName = "CategoryPage")]
+
+@if (_category is null)
+{
+    <p>Loading...</p>
+}
+else
+{
+    <PageTitle>@_category.Name — @TenantContext.Current.Name</PageTitle>
+
+    <HeadContent>
+        <meta name="description" content="Best @_category.Name deals on @TenantContext.Current.Name" />
+        <link rel="canonical" href="https://@TenantContext.Current.Domain/categories/@_category.Slug" />
+    </HeadContent>
+
+    <section class="category-page">
+        <nav class="breadcrumb" aria-label="Breadcrumb">
+            <a href="/">Home</a> &rsaquo;
+            <a href="/categories">Categories</a> &rsaquo;
+            <span>@_category.Name</span>
+        </nav>
+
+        <h1>@_category.Name</h1>
+
+        @if (_deals is null)
+        {
+            <div class="deals-grid">
+                @for (int i = 0; i < 12; i++)
+                {
+                    <div class="deal-card deal-card--skeleton"></div>
+                }
+            </div>
+        }
+        else if (!_deals.Deals.Any())
+        {
+            <p class="empty-state">No deals in this category yet — check back soon!</p>
+        }
+        else
+        {
+            <div class="deals-grid">
+                @foreach (var deal in _deals.Deals)
+                {
+                    <DealCard Deal="deal" />
+                }
+            </div>
+        }
+    </section>
+}
+
+@code {
+    [Parameter] public string CategorySlug { get; set; } = string.Empty;
+
+    private Category? _category;
+    private GetDealsResponse? _deals;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _category = await CategoryRepository.GetBySlugAsync(TenantContext.Current.Id, CategorySlug);
+        if (_category is null)
+        {
+            Nav.NavigateTo("/404", replace: true);
+            return;
+        }
+
+        var result = await Mediator.Send(
+            new GetDealsQuery(TenantContext.Current.Id, _category.Id, 1, 24));
+        if (result.IsSuccess) _deals = result.Value;
+    }
+}

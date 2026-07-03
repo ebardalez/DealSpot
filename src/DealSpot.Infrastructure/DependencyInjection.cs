@@ -1,4 +1,5 @@
 using DealSpot.Application.Abstractions.Affiliate;
+using DealSpot.Application.Abstractions.Authentication;
 using DealSpot.Application.Abstractions.Clock;
 using DealSpot.Application.Abstractions.Email;
 using DealSpot.Application.Abstractions.Tenancy;
@@ -6,7 +7,9 @@ using DealSpot.Domain.Abstractions;
 using DealSpot.Domain.Categories;
 using DealSpot.Domain.Deals;
 using DealSpot.Domain.Tenants;
+using DealSpot.Domain.Users;
 using DealSpot.Infrastructure.Affiliate;
+using DealSpot.Infrastructure.Authentication;
 using DealSpot.Infrastructure.BackgroundJobs;
 using DealSpot.Infrastructure.Clock;
 using DealSpot.Infrastructure.Email;
@@ -51,6 +54,7 @@ public static class DependencyInjection
         services.AddScoped<IDealRepository, DealRepository>();
         services.AddScoped<ITenantRepository, TenantRepository>();
         services.AddScoped<ICategoryRepository, CategoryRepository>();
+        services.AddScoped<IUserRepository, UserRepository>();
     }
 
     private static void AddBackgroundJobs(IServiceCollection services, IConfiguration configuration)
@@ -75,6 +79,7 @@ public static class DependencyInjection
         services.AddMemoryCache();
         services.AddScoped<ITenantContext, TenantContext>();
         services.AddScoped<TenantContext>(sp => (TenantContext)sp.GetRequiredService<ITenantContext>());
+        services.AddScoped<ICurrentUser, CurrentUser>();
     }
 
     private static void AddAffiliate(IServiceCollection services) =>

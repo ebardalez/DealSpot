@@ -1,6 +1,6 @@
 # 09 — Output Cache Invalidation
 
-**Phase:** 2 · **Status:** Not built (tags declared, never evicted) · **Depends on:** 00
+**Phase:** 2 · **Status:** ✅ Done · **Depends on:** 00
 
 ## Goal
 `DealPage`/`CategoryPage` policies declare cache tags (`deals`, `categories`) but nothing calls `EvictByTagAsync`, so a new or expired deal stays hidden until TTL (up to 30 min). Evict on change.
