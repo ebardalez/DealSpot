@@ -10,4 +10,5 @@ public static class DealErrors
     public static readonly Error InvalidPrice = new("Deal.InvalidPrice", "Deal price must be greater than zero.");
     public static readonly Error AlreadyExpired = new("Deal.AlreadyExpired", "Deal is already expired.");
     public static readonly Error Unauthorized = new("Deal.Unauthorized", "You do not have permission to modify this deal.");
+    public static readonly Error NotPendingApproval = new("Deal.NotPendingApproval", "Deal is not pending approval.");
 }

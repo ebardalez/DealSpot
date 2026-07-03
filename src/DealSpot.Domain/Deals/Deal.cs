@@ -11,7 +11,8 @@ public sealed class Deal : Entity
     private Deal(
         Guid id, Guid tenantId, Guid categoryId, Guid? submittedByUserId,
         string title, string slug, string description, DealPrice price,
-        string originalUrl, string affiliateUrl, string? imageUrl, string retailerName) : base(id)
+        string originalUrl, string affiliateUrl, string? imageUrl, string retailerName,
+        DealStatus initialStatus) : base(id)
     {
         TenantId = tenantId;
         CategoryId = categoryId;
@@ -24,10 +25,11 @@ public sealed class Deal : Entity
         AffiliateUrl = affiliateUrl;
         ImageUrl = imageUrl;
         RetailerName = retailerName;
-        Status = DealStatus.Active;
+        Status = initialStatus;
         CreatedAtUtc = DateTime.UtcNow;
         ExpiredReportCount = 0;
-        DealScore = DealScore.NotCalculated;
+        // ponytail: fresh instance per deal — EF Core OwnsOne breaks if multiple deals share the same static reference
+        DealScore = new DealScore(0, 0, 0, 0, DateTime.MinValue);
     }
 
     public Guid TenantId { get; private set; }
@@ -45,7 +47,8 @@ public sealed class Deal : Entity
     public DateTime CreatedAtUtc { get; private set; }
     public DateTime? ExpiresAtUtc { get; private set; }
     public int ExpiredReportCount { get; private set; }
-    public DealScore DealScore { get; private set; } = DealScore.NotCalculated;
+    // ponytail: fresh instance per entity — shared static ref breaks EF Core OwnsOne bulk inserts
+    public DealScore DealScore { get; private set; } = new(0, 0, 0, 0, DateTime.MinValue);
     public int UpVoteCount { get; private set; }
     public int DownVoteCount { get; private set; }
     public int NetScore => UpVoteCount - DownVoteCount;
@@ -53,7 +56,8 @@ public sealed class Deal : Entity
     public static Result<Deal> Create(
         Guid tenantId, Guid categoryId, Guid? submittedByUserId,
         string title, string slug, string description, DealPrice price,
-        string originalUrl, string affiliateUrl, string? imageUrl, string retailerName)
+        string originalUrl, string affiliateUrl, string? imageUrl, string retailerName,
+        DealStatus initialStatus = DealStatus.Active)
     {
         if (string.IsNullOrWhiteSpace(title))
             return Result.Failure<Deal>(DealErrors.InvalidTitle);
@@ -63,10 +67,33 @@ public sealed class Deal : Entity
             return Result.Failure<Deal>(DealErrors.InvalidPrice);
 
         var deal = new Deal(Guid.NewGuid(), tenantId, categoryId, submittedByUserId,
-            title, slug, description, price, originalUrl, affiliateUrl, imageUrl, retailerName);
+            title, slug, description, price, originalUrl, affiliateUrl, imageUrl, retailerName,
+            initialStatus);
 
-        deal.RaiseDomainEvent(new DealCreatedDomainEvent(deal.Id, deal.TenantId));
+        // ponytail: only raise DealCreated for Active deals. Pending deals raise it on Approve().
+        if (initialStatus == DealStatus.Active)
+            deal.RaiseDomainEvent(new DealCreatedDomainEvent(deal.Id, deal.TenantId));
+
         return Result.Success(deal);
+    }
+
+    public Result Approve()
+    {
+        if (Status != DealStatus.PendingApproval)
+            return Result.Failure(DealErrors.NotPendingApproval);
+
+        Status = DealStatus.Active;
+        RaiseDomainEvent(new DealCreatedDomainEvent(Id, TenantId));
+        return Result.Success();
+    }
+
+    public Result Reject()
+    {
+        if (Status != DealStatus.PendingApproval)
+            return Result.Failure(DealErrors.NotPendingApproval);
+
+        Status = DealStatus.Rejected;
+        return Result.Success();
     }
 
     public Result ReportAsExpired()

@@ -40,5 +40,12 @@ public sealed class DealRepository(ApplicationDbContext dbContext) : IDealReposi
             .OrderByDescending(d => d.CreatedAtUtc)
             .Skip((page - 1) * pageSize).Take(pageSize)
             .ToListAsync(cancellationToken);
+
+    public async Task<IReadOnlyList<Deal>> GetPendingByTenantAsync(Guid tenantId, CancellationToken cancellationToken = default) =>
+        await dbContext.Deals
+            .Where(d => d.TenantId == tenantId && d.Status == DealStatus.PendingApproval)
+            .OrderBy(d => d.CreatedAtUtc)
+            .ToListAsync(cancellationToken);
+
     public void Update(Deal deal) => dbContext.Deals.Update(deal);
 }

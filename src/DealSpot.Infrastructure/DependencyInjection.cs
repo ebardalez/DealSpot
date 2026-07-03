@@ -19,11 +19,13 @@ using DealSpot.Infrastructure.Tenancy;
 using Hangfire;
 using Hangfire.PostgreSql;
 using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
-using Microsoft.EntityFrameworkCore.Diagnostics;
 using Resend;
 
 namespace DealSpot.Infrastructure;
@@ -118,12 +120,12 @@ public static class DependencyInjection
 
     public static WebApplication UseInfrastructure(this WebApplication app)
     {
-        // ponytail: auto-migrate on startup. Aspire ensures DB container is ready (WaitFor).
-        // Safe for single-instance deploys. Add a migration lock if scaling to multiple replicas.
         using (var scope = app.Services.CreateScope())
         {
             var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
             var logger = scope.ServiceProvider.GetRequiredService<ILogger<ApplicationDbContext>>();
+
+            // ponytail: auto-migrate on startup. Aspire ensures DB container is ready (WaitFor).
             try
             {
                 db.Database.Migrate();
@@ -134,7 +136,21 @@ public static class DependencyInjection
                 logger.LogError(ex, "Database migration failed");
                 throw;
             }
+
+            // ponytail: seed dev data after migration. Separate try/catch so seed failure doesn't crash app.
+            if (app.Environment.IsDevelopment())
+            {
+                try
+                {
+                    SeedDevelopmentData.SeedAsync(db, logger).GetAwaiter().GetResult();
+                }
+                catch (Exception ex)
+                {
+                    logger.LogError(ex, "Development seed data failed — app continues without seed data");
+                }
+            }
         }
+
         RecurringJob.AddOrUpdate<DealUrlHealthCheckJob>(
             "deal-url-health-check",
             job => job.ExecuteAsync(CancellationToken.None),
@@ -143,14 +159,13 @@ public static class DependencyInjection
         RecurringJob.AddOrUpdate<DailyDigestJob>(
             "daily-digest",
             job => job.ExecuteAsync(CancellationToken.None),
-            Cron.Daily(8)); // 8 AM UTC
+            Cron.Daily(8));
 
         RecurringJob.AddOrUpdate<DealScoreRecalculationJob>(
             "deal-score-recalculation",
             job => job.ExecuteAsync(CancellationToken.None),
-            "0 */2 * * *"); // Every 2 hours
+            "0 */2 * * *");
 
         return app;
     }
 }
-

@@ -1,0 +1,160 @@
+@page "/submit"
+@using DealSpot.Application.Abstractions.Authentication
+@using DealSpot.Application.Abstractions.Tenancy
+@using DealSpot.Application.Categories.GetCategories
+@using DealSpot.Application.Deals.CreateDeal
+@using DealSpot.Domain.Deals
+@using MediatR
+@inject ISender Mediator
+@inject ITenantContext TenantContext
+@inject ICurrentUser CurrentUser
+@attribute [Authorize]
+@rendermode InteractiveServer
+
+<PageTitle>Submit a Deal</PageTitle>
+
+<section class="page-section">
+    <h1>Submit a Deal</h1>
+    <p>Share a deal with the community. It will be reviewed by our team before going live.</p>
+
+    @if (_success)
+    {
+        <div class="alert alert--success">
+            <p>Thanks! Your deal has been submitted and is awaiting approval.</p>
+            <button class="btn btn--secondary" @onclick="Reset">Submit Another</button>
+        </div>
+    }
+    else
+    {
+        @if (!string.IsNullOrEmpty(_error))
+        {
+            <div class="alert alert--error">@_error</div>
+        }
+
+        <EditForm Model="_model" OnValidSubmit="SubmitAsync" FormName="submit-deal">
+            <DataAnnotationsValidator />
+
+            <div class="form-group">
+                <label>Category</label>
+                <InputSelect @bind-Value="_model.CategoryId">
+                    <option value="">— Select —</option>
+                    @if (_categories is not null)
+                    {
+                        @foreach (var cat in _categories)
+                        {
+                            <option value="@cat.Id">@cat.Name</option>
+                        }
+                    }
+                </InputSelect>
+            </div>
+
+            <div class="form-group">
+                <label>Title</label>
+                <InputText @bind-Value="_model.Title" placeholder="e.g. Sony WH-1000XM5 — 30% off" />
+            </div>
+
+            <div class="form-group">
+                <label>Description</label>
+                <InputTextArea @bind-Value="_model.Description" rows="3" placeholder="Why is this a good deal?" />
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Current Price</label>
+                    <InputNumber @bind-Value="_model.CurrentPrice" />
+                </div>
+                <div class="form-group">
+                    <label>Original Price (optional)</label>
+                    <InputNumber @bind-Value="_model.OriginalPrice" />
+                </div>
+                <div class="form-group">
+                    <label>Currency</label>
+                    <InputText @bind-Value="_model.Currency" />
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>Product URL</label>
+                <InputText @bind-Value="_model.ProductUrl" placeholder="https://..." />
+            </div>
+
+            <div class="form-group">
+                <label>Image URL (optional)</label>
+                <InputText @bind-Value="_model.ImageUrl" />
+            </div>
+
+            <div class="form-group">
+                <label>Retailer Name</label>
+                <InputText @bind-Value="_model.RetailerName" placeholder="e.g. Amazon" />
+            </div>
+
+            <button type="submit" class="btn btn--primary" disabled="@_submitting">
+                @(_submitting ? "Submitting..." : "Submit Deal")
+            </button>
+        </EditForm>
+    }
+</section>
+
+@code {
+    private DealFormModel _model = new();
+    private IReadOnlyList<CategoryDto>? _categories;
+    private bool _success;
+    private string? _error;
+    private bool _submitting;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var result = await Mediator.Send(new GetCategoriesQuery(TenantContext.Current.Id));
+        if (result.IsSuccess) _categories = result.Value;
+    }
+
+    private async Task SubmitAsync()
+    {
+        _submitting = true;
+        _error = null;
+
+        var command = new CreateDealCommand(
+            TenantContext.Current.Id,
+            Guid.TryParse(_model.CategoryId, out var catId) ? catId : Guid.Empty,
+            CurrentUser.UserId,
+            _model.Title ?? "",
+            _model.Description ?? "",
+            _model.CurrentPrice,
+            _model.OriginalPrice,
+            _model.Currency ?? "USD",
+            _model.ProductUrl ?? "",
+            string.IsNullOrWhiteSpace(_model.ImageUrl) ? null : _model.ImageUrl,
+            _model.RetailerName ?? "",
+            DealStatus.PendingApproval);
+
+        var result = await Mediator.Send(command);
+
+        if (result.IsSuccess)
+            _success = true;
+        else
+            _error = result.Error.Description;
+
+        _submitting = false;
+    }
+
+    private void Reset()
+    {
+        _model = new();
+        _success = false;
+        _error = null;
+    }
+
+    // ponytail: reuse same form model shape as admin. No separate DTO.
+    private sealed class DealFormModel
+    {
+        public string? CategoryId { get; set; }
+        public string? Title { get; set; }
+        public string? Description { get; set; }
+        public decimal CurrentPrice { get; set; }
+        public decimal? OriginalPrice { get; set; }
+        public string? Currency { get; set; } = "USD";
+        public string? ProductUrl { get; set; }
+        public string? ImageUrl { get; set; }
+        public string? RetailerName { get; set; }
+    }
+}

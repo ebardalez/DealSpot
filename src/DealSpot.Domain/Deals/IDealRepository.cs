@@ -8,6 +8,7 @@ public interface IDealRepository
     Task<IReadOnlyList<Deal>> GetActiveByCategoryAsync(Guid tenantId, Guid categoryId, int page, int pageSize, CancellationToken cancellationToken = default);
     Task<IReadOnlyList<Deal>> GetActiveDealsForUrlCheckAsync(int batchSize, CancellationToken cancellationToken = default);
     Task<IReadOnlyList<Deal>> GetByTenantAsync(Guid tenantId, int page, int pageSize, CancellationToken cancellationToken = default);
+    Task<IReadOnlyList<Deal>> GetPendingByTenantAsync(Guid tenantId, CancellationToken cancellationToken = default);
     void Add(Deal deal);
     void Update(Deal deal);
 }

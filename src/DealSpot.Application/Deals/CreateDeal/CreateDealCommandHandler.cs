@@ -11,7 +11,8 @@ public sealed record CreateDealCommand(
     Guid TenantId, Guid CategoryId, Guid? SubmittedByUserId,
     string Title, string Description,
     decimal CurrentPrice, decimal? OriginalPrice, string Currency,
-    string ProductUrl, string? ImageUrl, string RetailerName) : ICommand<CreateDealResponse>;
+    string ProductUrl, string? ImageUrl, string RetailerName,
+    DealStatus InitialStatus = DealStatus.Active) : ICommand<CreateDealResponse>;
 
 public sealed record CreateDealResponse(Guid DealId, string Slug, string AffiliateUrl);
 
@@ -35,7 +36,8 @@ public sealed class CreateDealCommandHandler(
             command.TenantId, command.CategoryId, command.SubmittedByUserId,
             command.Title, slug, command.Description, price,
             rewriteResult.CanonicalUrl, rewriteResult.AffiliateUrl,
-            command.ImageUrl, command.RetailerName);
+            command.ImageUrl, command.RetailerName,
+            command.InitialStatus);
 
         if (dealResult.IsFailure)
             return Result.Failure<CreateDealResponse>(dealResult.Error);
