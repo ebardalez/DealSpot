@@ -1,9 +1,7 @@
 <Project>
-
   <PropertyGroup>
     <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
   </PropertyGroup>
-
   <!--
     Force Newtonsoft.Json to a patched version globally.
     Hangfire.Core 1.8.x has a hard dependency on Newtonsoft.Json and cannot
@@ -15,12 +13,11 @@
   <ItemGroup>
     <GlobalPackageReference Include="Newtonsoft.Json" Version="13.0.4" />
   </ItemGroup>
-
   <!-- Domain -->
   <ItemGroup>
     <PackageVersion Include="MediatR.Contracts" Version="2.0.1" />
+    <PackageVersion Include="WebPush" Version="1.0.13" />
   </ItemGroup>
-
   <!-- Application -->
   <ItemGroup>
     <PackageVersion Include="FluentValidation" Version="11.12.0" />
@@ -28,7 +25,6 @@
     <PackageVersion Include="MediatR" Version="12.5.0" />
     <PackageVersion Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.7" />
   </ItemGroup>
-
   <!-- Infrastructure -->
   <ItemGroup>
     <PackageVersion Include="AspNetCore.HealthChecks.NpgSql" Version="9.0.0" />
@@ -43,7 +39,6 @@
     <PackageVersion Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="10.0.1" />
     <PackageVersion Include="Resend" Version="0.5.0" />
   </ItemGroup>
-
   <!-- Aspire + OpenTelemetry -->
   <!--
     Note: Instrumentation contrib packages (AspNetCore, Http) have a separate release
@@ -64,14 +59,12 @@
     <PackageVersion Include="OpenTelemetry.Instrumentation.Http" Version="1.15.1" />
     <PackageVersion Include="OpenTelemetry.Instrumentation.Runtime" Version="1.11.1" />
   </ItemGroup>
-
   <!-- Web -->
   <ItemGroup>
     <PackageVersion Include="Serilog.AspNetCore" Version="9.0.0" />
     <PackageVersion Include="Serilog.Sinks.Console" Version="6.1.1" />
     <PackageVersion Include="Serilog.Sinks.File" Version="6.0.0" />
   </ItemGroup>
-
   <!-- Tests -->
   <ItemGroup>
     <PackageVersion Include="FluentAssertions" Version="6.12.2" />
@@ -80,8 +73,4 @@
     <PackageVersion Include="xunit" Version="2.9.3" />
     <PackageVersion Include="xunit.runner.visualstudio" Version="2.8.2" />
   </ItemGroup>
-
 </Project>
-
-
-

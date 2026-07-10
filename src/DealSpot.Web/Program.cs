@@ -1,13 +1,16 @@
-﻿using DealSpot.Application;
+using DealSpot.Application;
 using DealSpot.Application.Abstractions.Caching;
+using DealSpot.Application.Push;
 using DealSpot.Application.Users.ProvisionUser;
 using DealSpot.Infrastructure;
 using DealSpot.Infrastructure.Caching;
+using DealSpot.Infrastructure.Push;
 using DealSpot.Infrastructure.Tenancy;
 using DealSpot.Web;
 using Hangfire;
 using MediatR;
 using Microsoft.AspNetCore.Authentication;
+using Microsoft.Extensions.Options;
 using Serilog;
 using System.Security.Claims;
 
@@ -140,10 +143,27 @@ app.MapPost("/auth/logout", async (HttpContext ctx) =>
     return Results.Redirect("/");
 });
 
+// ─── Push notification API ──────────────────────────────────────────────────
+app.MapGet("/api/push/vapid-key", (IOptions<VapidOptions> opts) =>
+    Results.Json(new { key = opts.Value.PublicKey }));
+
+app.MapPost("/api/push/subscribe", async (SubscribePushRequest req, ISender mediator) =>
+{
+    var result = await mediator.Send(new SubscribePushCommand(req.Endpoint, req.P256dh, req.Auth));
+    return result.IsSuccess ? Results.Ok() : Results.BadRequest();
+}).RequireAuthorization();
+
+app.MapPost("/api/push/unsubscribe", async (UnsubscribePushRequest req, ISender mediator) =>
+{
+    var result = await mediator.Send(new UnsubscribePushCommand(req.Endpoint));
+    return result.IsSuccess ? Results.Ok() : Results.BadRequest();
+}).RequireAuthorization();
+
 app.MapDefaultEndpoints(); // Aspire health + liveness endpoints
 app.UseInfrastructure();
 
 app.Run();
 
-
-
+// ponytail: minimal request records, no separate file
+internal sealed record SubscribePushRequest(string Endpoint, string P256dh, string Auth);
+internal sealed record UnsubscribePushRequest(string Endpoint);

@@ -1,4 +1,5 @@
 using DealSpot.Application.Abstractions.Email;
+using DealSpot.Application.Abstractions.Push;
 using DealSpot.Domain.Abstractions;
 using DealSpot.Domain.Categories;
 using DealSpot.Domain.Deals;
@@ -21,7 +22,9 @@ public sealed class DealCreatedNotificationHandler(
     INotificationPreferenceRepository prefRepository,
     IUserRepository userRepository,
     IPendingAlertRepository pendingAlertRepository,
+    IPushSubscriptionRepository pushSubscriptionRepository,
     IEmailService emailService,
+    IPushSender pushSender,
     IUnitOfWork unitOfWork,
     ILogger<DealCreatedNotificationHandler> logger) : INotificationHandler<DealCreatedDomainEvent>
 {
@@ -67,6 +70,7 @@ public sealed class DealCreatedNotificationHandler(
 
                 if (!isEnabled) continue;
 
+                var dealUrl = $"https://{tenant.Domain}/deals/{deal.Slug}";
                 var frequency = pref?.Frequency ?? NotificationFrequency.Instant;
 
                 if (frequency == NotificationFrequency.DailyDigest)
@@ -79,7 +83,6 @@ public sealed class DealCreatedNotificationHandler(
                     var user = await userRepository.GetByIdAsync(userId, cancellationToken);
                     if (user is null) continue;
 
-                    var dealUrl = $"https://{tenant.Domain}/deals/{deal.Slug}";
                     var model = new DealAlertEmailModel(
                         tenant.Name, deal.Title, dealUrl, deal.ImageUrl ?? string.Empty,
                         deal.Price.CurrentPrice, deal.Price.OriginalPrice, deal.Price.Currency,
@@ -95,6 +98,12 @@ public sealed class DealCreatedNotificationHandler(
                         await emailService.SendDealAlertAsync(user.Email, user.DisplayName, model, cancellationToken);
                     }
                 }
+
+                // Push notification — parallel to email, independent of frequency
+                if (pref?.PushEnabled == true)
+                {
+                    await SendPushToUserAsync(userId, deal.TenantId, deal.Title, dealUrl, deal.ImageUrl, cancellationToken);
+                }
             }
 
             await unitOfWork.SaveChangesAsync(cancellationToken);
@@ -103,6 +112,20 @@ public sealed class DealCreatedNotificationHandler(
         {
             // ponytail: notification failure must not fail the deal write
             logger.LogError(ex, "Failed to process notifications for deal {DealId}", notification.DealId);
+        }
+    }
+
+    private async Task SendPushToUserAsync(Guid userId, Guid tenantId, string title, string url, string? iconUrl, CancellationToken ct)
+    {
+        var subs = await pushSubscriptionRepository.GetByUserAsync(userId, tenantId, ct);
+        foreach (var sub in subs)
+        {
+            var alive = await pushSender.SendAsync(sub, new PushPayload(title, "New deal alert!", url, iconUrl), ct);
+            if (!alive)
+            {
+                pushSubscriptionRepository.Remove(sub);
+                logger.LogInformation("Removed expired push subscription {Endpoint}", sub.Endpoint);
+            }
         }
     }
 }

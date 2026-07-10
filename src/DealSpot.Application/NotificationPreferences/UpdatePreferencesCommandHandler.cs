@@ -8,7 +8,7 @@ namespace DealSpot.Application.NotificationPreferences;
 
 public sealed record UpdatePreferencesCommand(
     bool NewDealInCategory, bool WatchlistMatch, bool DealExpiringSoon,
-    NotificationFrequency Frequency) : ICommand;
+    bool PushEnabled, NotificationFrequency Frequency) : ICommand;
 
 public sealed class UpdatePreferencesCommandHandler(
     INotificationPreferenceRepository prefRepository,
@@ -27,11 +27,13 @@ public sealed class UpdatePreferencesCommandHandler(
         {
             pref = UserNotificationPreference.Create(userId, tenantId);
             pref.Update(command.NewDealInCategory, command.WatchlistMatch, command.DealExpiringSoon, command.Frequency);
+            pref.SetPushEnabled(command.PushEnabled);
             prefRepository.Add(pref);
         }
         else
         {
             pref.Update(command.NewDealInCategory, command.WatchlistMatch, command.DealExpiringSoon, command.Frequency);
+            pref.SetPushEnabled(command.PushEnabled);
             prefRepository.Update(pref);
         }
 

@@ -1,4 +1,5 @@
 using DealSpot.Application.Abstractions.Email;
+using DealSpot.Application.Abstractions.Push;
 using DealSpot.Domain.Abstractions;
 using DealSpot.Domain.Categories;
 using DealSpot.Domain.Deals;
@@ -19,7 +20,9 @@ public sealed class DealPriceDropNotificationHandler(
     INotificationPreferenceRepository prefRepository,
     IUserRepository userRepository,
     IPendingAlertRepository pendingAlertRepository,
+    IPushSubscriptionRepository pushSubscriptionRepository,
     IEmailService emailService,
+    IPushSender pushSender,
     IUnitOfWork unitOfWork,
     ILogger<DealPriceDropNotificationHandler> logger) : INotificationHandler<DealPriceChangedDomainEvent>
 {
@@ -64,6 +67,7 @@ public sealed class DealPriceDropNotificationHandler(
 
                 var frequency = pref?.Frequency ?? NotificationFrequency.Instant;
                 var alertType = "PriceDrop";
+                var dealUrl = $"https://{tenant.Domain}/deals/{deal.Slug}";
 
                 if (frequency == NotificationFrequency.DailyDigest)
                 {
@@ -74,7 +78,6 @@ public sealed class DealPriceDropNotificationHandler(
                     var user = await userRepository.GetByIdAsync(userId, cancellationToken);
                     if (user is null) continue;
 
-                    var dealUrl = $"https://{tenant.Domain}/deals/{deal.Slug}";
                     // ponytail: reuse DealAlertEmailModel. Add dedicated PriceDropEmailModel when email template diverges.
                     var model = new DealAlertEmailModel(
                         tenant.Name, $"Price Drop! {deal.Title}", dealUrl, deal.ImageUrl ?? string.Empty,
@@ -82,6 +85,24 @@ public sealed class DealPriceDropNotificationHandler(
                         category.Name, deal.RetailerName);
 
                     await emailService.SendDealAlertAsync(user.Email, user.DisplayName, model, cancellationToken);
+                }
+
+                // Push notification — parallel to email, independent of frequency
+                if (pref?.PushEnabled == true)
+                {
+                    var subs = await pushSubscriptionRepository.GetByUserAsync(userId, deal.TenantId, cancellationToken);
+                    foreach (var sub in subs)
+                    {
+                        var alive = await pushSender.SendAsync(sub,
+                            new PushPayload($"Price Drop! {deal.Title}",
+                                $"Now {notification.Currency}{notification.NewPrice:F2} (was {notification.Currency}{notification.OldPrice:F2})",
+                                dealUrl, deal.ImageUrl), cancellationToken);
+                        if (!alive)
+                        {
+                            pushSubscriptionRepository.Remove(sub);
+                            logger.LogInformation("Removed expired push subscription {Endpoint}", sub.Endpoint);
+                        }
+                    }
                 }
             }
 

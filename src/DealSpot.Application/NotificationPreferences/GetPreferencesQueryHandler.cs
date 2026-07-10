@@ -10,7 +10,7 @@ public sealed record GetPreferencesQuery : IQuery<NotificationPreferencesDto>;
 
 public sealed record NotificationPreferencesDto(
     bool NewDealInCategory, bool WatchlistMatch, bool DealExpiringSoon,
-    NotificationFrequency Frequency);
+    bool PushEnabled, NotificationFrequency Frequency);
 
 public sealed class GetPreferencesQueryHandler(
     INotificationPreferenceRepository prefRepository,
@@ -29,6 +29,7 @@ public sealed class GetPreferencesQueryHandler(
             pref?.NewDealInCategory ?? true,
             pref?.WatchlistMatch ?? true,
             pref?.DealExpiringSoon ?? false,
+            pref?.PushEnabled ?? false,
             pref?.Frequency ?? NotificationFrequency.Instant);
     }
 }

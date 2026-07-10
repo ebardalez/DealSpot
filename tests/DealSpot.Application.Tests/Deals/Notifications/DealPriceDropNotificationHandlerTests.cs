@@ -1,4 +1,5 @@
 using DealSpot.Application.Abstractions.Email;
+using DealSpot.Application.Abstractions.Push;
 using DealSpot.Application.Deals.Notifications;
 using DealSpot.Domain.Abstractions;
 using DealSpot.Domain.Categories;
@@ -22,7 +23,9 @@ public sealed class DealPriceDropNotificationHandlerTests
     private readonly INotificationPreferenceRepository _prefRepo = Substitute.For<INotificationPreferenceRepository>();
     private readonly IUserRepository _userRepo = Substitute.For<IUserRepository>();
     private readonly IPendingAlertRepository _pendingAlertRepo = Substitute.For<IPendingAlertRepository>();
+    private readonly IPushSubscriptionRepository _pushSubRepo = Substitute.For<IPushSubscriptionRepository>();
     private readonly IEmailService _emailService = Substitute.For<IEmailService>();
+    private readonly IPushSender _pushSender = Substitute.For<IPushSender>();
     private readonly IUnitOfWork _unitOfWork = Substitute.For<IUnitOfWork>();
     private readonly DealPriceDropNotificationHandler _handler;
 
@@ -30,8 +33,9 @@ public sealed class DealPriceDropNotificationHandlerTests
     {
         _handler = new DealPriceDropNotificationHandler(
             _dealRepo, _categoryRepo, _tenantRepo, _watchlistRepo,
-            _prefRepo, _userRepo, _pendingAlertRepo, _emailService,
-            _unitOfWork, Substitute.For<ILogger<DealPriceDropNotificationHandler>>());
+            _prefRepo, _userRepo, _pendingAlertRepo, _pushSubRepo,
+            _emailService, _pushSender, _unitOfWork,
+            Substitute.For<ILogger<DealPriceDropNotificationHandler>>());
     }
 
     [Fact]

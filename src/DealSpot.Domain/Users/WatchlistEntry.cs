@@ -45,6 +45,7 @@ public sealed class UserNotificationPreference : Entity
     public bool NewDealInCategory { get; private set; } = true;
     public bool WatchlistMatch { get; private set; } = true;
     public bool DealExpiringSoon { get; private set; } = false;
+    public bool PushEnabled { get; private set; } = false;
     public NotificationFrequency Frequency { get; private set; } = NotificationFrequency.Instant;
 
     public static UserNotificationPreference Create(Guid userId, Guid tenantId) =>
@@ -57,6 +58,8 @@ public sealed class UserNotificationPreference : Entity
         DealExpiringSoon = dealExpiringSoon;
         Frequency = frequency;
     }
+
+    public void SetPushEnabled(bool enabled) => PushEnabled = enabled;
 }
 
 public enum NotificationFrequency { Instant = 1, DailyDigest = 2 }

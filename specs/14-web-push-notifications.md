@@ -1,6 +1,6 @@
 # 14 — Web Push Notifications
 
-**Phase:** 3 · **Status:** Not built · **Depends on:** 01, 03
+**Phase:** 3 · **Status:** ✅ Done · **Depends on:** 01, 03
 
 ## Goal
 Browser push (Web Push / VAPID) as an alternative delivery channel for the same triggers as email (03) + price drops (11). Opt-in; email stays the default.

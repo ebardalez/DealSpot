@@ -2,6 +2,7 @@ using DealSpot.Application.Abstractions.Affiliate;
 using DealSpot.Application.Abstractions.Authentication;
 using DealSpot.Application.Abstractions.Clock;
 using DealSpot.Application.Abstractions.Email;
+using DealSpot.Application.Abstractions.Push;
 using DealSpot.Application.Abstractions.Tenancy;
 using DealSpot.Domain.Abstractions;
 using DealSpot.Domain.Categories;
@@ -15,6 +16,7 @@ using DealSpot.Infrastructure.Clock;
 using DealSpot.Infrastructure.Email;
 using DealSpot.Infrastructure.Persistence;
 using DealSpot.Infrastructure.Persistence.Repositories;
+using DealSpot.Infrastructure.Push;
 using DealSpot.Infrastructure.Tenancy;
 using Hangfire;
 using Hangfire.PostgreSql;
@@ -41,6 +43,7 @@ public static class DependencyInjection
         AddTenancy(services);
         AddAffiliate(services);
         AddEmail(services, configuration);
+        AddPush(services, configuration);
         AddHttpClients(services);
         AddHealthChecks(services, configuration);
         return services;
@@ -66,6 +69,7 @@ public static class DependencyInjection
         services.AddScoped<INotificationPreferenceRepository, NotificationPreferenceRepository>();
         services.AddScoped<IPendingAlertRepository, PendingAlertRepository>();
         services.AddScoped<IPriceSnapshotRepository, PriceSnapshotRepository>();
+        services.AddScoped<IPushSubscriptionRepository, PushSubscriptionRepository>();
     }
 
     private static void AddBackgroundJobs(IServiceCollection services, IConfiguration configuration)
@@ -105,6 +109,12 @@ public static class DependencyInjection
             o.ApiToken = configuration["Email:ResendApiKey"] ?? string.Empty);
         services.AddTransient<IResend, ResendClient>();
         services.AddScoped<IEmailService, ResendEmailService>();
+    }
+
+    private static void AddPush(IServiceCollection services, IConfiguration configuration)
+    {
+        services.Configure<VapidOptions>(configuration.GetSection(VapidOptions.SectionName));
+        services.AddScoped<IPushSender, WebPushSender>();
     }
 
     private static void AddHttpClients(IServiceCollection services) =>

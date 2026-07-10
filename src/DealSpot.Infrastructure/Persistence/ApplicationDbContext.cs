@@ -23,6 +23,7 @@ public sealed class ApplicationDbContext(DbContextOptions<ApplicationDbContext> 
     public DbSet<UserNotificationPreference> NotificationPreferences => Set<UserNotificationPreference>();
     public DbSet<PendingAlert> PendingAlerts => Set<PendingAlert>();
     public DbSet<PriceSnapshot> PriceSnapshots => Set<PriceSnapshot>();
+    public DbSet<PushSubscription> PushSubscriptions => Set<PushSubscription>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

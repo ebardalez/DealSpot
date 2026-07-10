@@ -7,11 +7,11 @@ Specs for remaining (unbuilt) features. One file per feature. Ordered by depende
 Docs (`DOCUMENTATION.md` §23) drift from code. Actual state:
 
 **Built & wired**
-- Domain: `Deal`, `Tenant`, `Category`, `User`, `WatchlistEntry`, `UserNotificationPreference`, `AffiliateNetwork`.
-- App: `CreateDeal`, `ReportDealExpired`, `ExpireDeal`, `GetDeals`, `CastVote`, `GetDealVote`, `GetPreferences`, `UpdatePreferences`, `AddCategoryWatch`, `AddKeywordWatch`, `RemoveWatch`, `GetWatchlist`, `ProvisionUser` handlers; `DealCreatedNotificationHandler`; `DealPriceDropNotificationHandler`; `DealCreatedScoreHandler`; `DealScoreCalculator`; `RecordPriceSnapshotHandler`; `GetPriceHistoryQuery`; `UpdateDealPriceCommand`; `Logging` + `Validation` pipeline behaviors.
-- Infra: `ApplicationDbContext` (all DbSets), `DealRepository`, `DealVoteRepository`, `TenantRepository`, `CategoryRepository`, `UserRepository`, `WatchlistRepository`, `NotificationPreferenceRepository`, `PendingAlertRepository`, `PriceSnapshotRepository`, `AffiliateUrlRewriter`, `ResendEmailService`, `DealUrlHealthCheckJob`, `DailyDigestJob`, `DealScoreRecalculationJob`, `TenantResolutionMiddleware`, `OutputCacheInvalidator`. Auto-migration on startup via `UseInfrastructure()`.
-- Web: `Home`, `DealDetail` (with price history chart), `DealCard`, `VoteButton`, `ExpireReportButton`, `WatchCategoryButton`, `AdUnit`, `MainLayout`, `CategoryList`, `CategoryDetail`, `Watchlist`, `NotificationSettings`, `AdminDealList`, `AdminDealNew`, `AdminDealPrice`; **Google OAuth is wired** in `Program.cs`; output cache (3 policies); Hangfire dashboard; AdSense (config-driven, disabled by default).
-- Tests: `DealTests`, `CreateDealCommandHandlerTests`, `CastVoteCommandHandlerTests`, `DealCreatedNotificationHandlerTests`, `DealPriceDropNotificationHandlerTests`, `DealScoreCalculatorTests`, `DealCreatedScoreHandlerTests`, `AddCategoryWatchCommandHandlerTests`, `RemoveWatchCommandHandlerTests`, `ProvisionUserCommandHandlerTests`, `CacheInvalidationHandlerTests`, `UpdateDealPriceCommandHandlerTests`, `RecordPriceSnapshotHandlerTests`. Migrations: `InitialCreate`, `AddUserAndCategoryConfigurations`, `AddWatchlistEntryConfiguration`, `AddDealVotingAndNotifications`, **`AddPriceSnapshots` (pending generation)**. Auto-applied on startup.
+- Domain: `Deal`, `Tenant`, `Category`, `User`, `WatchlistEntry`, `UserNotificationPreference`, `PushSubscription`, `AffiliateNetwork`.
+- App: `CreateDeal`, `ReportDealExpired`, `ExpireDeal`, `GetDeals`, `CastVote`, `GetDealVote`, `GetPreferences`, `UpdatePreferences`, `AddCategoryWatch`, `AddKeywordWatch`, `RemoveWatch`, `GetWatchlist`, `ProvisionUser`, `ApproveDeal`, `RejectDeal`, `UpdateDealPrice`, `GetPriceHistory`, `SubscribePush`, `UnsubscribePush` handlers; `DealCreatedNotificationHandler`; `DealPriceDropNotificationHandler`; `DealCreatedScoreHandler`; `DealScoreCalculator`; `RecordPriceSnapshotHandler`; `UpdateReputationOnApproveHandler`; `UpdateReputationOnExpireHandler`; `Logging` + `Validation` pipeline behaviors.
+- Infra: `ApplicationDbContext` (all DbSets incl. `PushSubscriptions`), `DealRepository`, `DealVoteRepository`, `TenantRepository`, `CategoryRepository`, `UserRepository`, `WatchlistRepository`, `NotificationPreferenceRepository`, `PendingAlertRepository`, `PriceSnapshotRepository`, `PushSubscriptionRepository`, `AffiliateUrlRewriter`, `ResendEmailService`, `WebPushSender`, `DealUrlHealthCheckJob`, `DailyDigestJob`, `DealScoreRecalculationJob`, `TenantResolutionMiddleware`, `OutputCacheInvalidator`. Auto-migration on startup via `UseInfrastructure()`.
+- Web: `Home`, `DealDetail` (with price history chart), `DealCard`, `VoteButton`, `ExpireReportButton`, `WatchCategoryButton`, `AdUnit`, `MainLayout`, `CategoryList`, `CategoryDetail`, `Watchlist`, `NotificationSettings` (with push toggle), `SubmitDeal`, `AdminDealList`, `AdminDealNew`, `AdminDealPrice`; **Google OAuth is wired** in `Program.cs`; output cache (3 policies); Hangfire dashboard; AdSense (config-driven, disabled by default); Push API endpoints (`/api/push/*`); service worker (`sw.js`).
+- Tests: `DealTests`, `CreateDealCommandHandlerTests`, `CastVoteCommandHandlerTests`, `DealCreatedNotificationHandlerTests` (incl. push send + 410 prune), `DealPriceDropNotificationHandlerTests`, `DealScoreCalculatorTests`, `DealCreatedScoreHandlerTests`, `AddCategoryWatchCommandHandlerTests`, `RemoveWatchCommandHandlerTests`, `ProvisionUserCommandHandlerTests`, `CacheInvalidationHandlerTests`, `UpdateDealPriceCommandHandlerTests`, `RecordPriceSnapshotHandlerTests`, `UpdateReputationOnApproveHandlerTests`, `UpdateReputationOnExpireHandlerTests`, `RejectDealCommandHandlerTests`. Migrations: `InitialCreate`, `AddUserAndCategoryConfigurations`, `AddWatchlistEntryConfiguration`, `AddDealVotingAndNotifications`, `AddPriceSnapshots`, `AddPushSubscriptions`. Auto-applied on startup.
 
 **Domain-only stubs (entity exists, nothing consumes it)**
 - `AffiliateNetwork` — no repository, handler, EF config, or UI.
@@ -39,9 +39,9 @@ Docs (`DOCUMENTATION.md` §23) drift from code. Actual state:
 | 09 | Output cache invalidation | 2 | 00 | ✅ Done |
 | 10 | Price history | 3 | 00 | ✅ Done |
 | 11 | Price drop alerts | 3 | 02, 03, 10 | ✅ Done |
-| 12 | Community submissions & approval | 3 | 01, 07 | |
-| 13 | User reputation | 3 | 04, 12 | |
-| 14 | Web push notifications | 3 | 01, 03 | |
+| 12 | Community submissions & approval | 3 | 01, 07 | ✅ Done |
+| 13 | User reputation | 3 | 04, 12 | ✅ Done |
+| 14 | Web push notifications | 3 | 01, 03 | ✅ Done |
 
 ## Conventions (match existing code)
 

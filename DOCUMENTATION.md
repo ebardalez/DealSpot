@@ -19,17 +19,18 @@
 11. [Caching Strategy](#11-caching-strategy)
 12. [Background Jobs](#12-background-jobs)
 13. [Email Notifications](#13-email-notifications)
-14. [Deal Score](#14-deal-score)
-15. [Database](#15-database)
-16. [Environment Configuration](#16-environment-configuration)
-17. [Local Development Setup](#17-local-development-setup)
-18. [Production Deployment](#18-production-deployment)
-19. [Adding a New Tenant](#19-adding-a-new-tenant)
-20. [Adding Affiliate Networks](#20-adding-affiliate-networks)
-21. [Testing](#21-testing)
-22. [Monetization Strategy](#22-monetization-strategy)
-23. [Development Roadmap](#23-development-roadmap)
-24. [Key Architectural Decisions](#24-key-architectural-decisions)
+14. [Push Notifications](#14-push-notifications)
+15. [Deal Score](#15-deal-score)
+16. [Database](#15-database)
+17. [Environment Configuration](#16-environment-configuration)
+18. [Local Development Setup](#17-local-development-setup)
+19. [Production Deployment](#18-production-deployment)
+20. [Adding a New Tenant](#19-adding-a-new-tenant)
+21. [Adding Affiliate Networks](#20-adding-affiliate-networks)
+22. [Testing](#21-testing)
+23. [Monetization Strategy](#22-monetization-strategy)
+24. [Development Roadmap](#23-development-roadmap)
+25. [Key Architectural Decisions](#24-key-architectural-decisions)
 
 ---
 
@@ -737,7 +738,53 @@ Users choose per-tenant:
 
 ---
 
-## 14. Deal Score
+
+---
+
+## 14. Push Notifications
+
+Browser push notifications (Web Push / VAPID) as an alternative delivery channel alongside email. Opt-in; email stays the default.
+
+### How It Works
+
+1. User enables push on /settings/notifications → browser prompts for permission
+2. Service worker (sw.js) registered, pushManager.subscribe() called with VAPID public key
+3. Subscription keys (ndpoint, p256dh, uth) sent to POST /api/push/subscribe
+4. SubscribePushCommand stores PushSubscription entity and auto-enables PushEnabled preference
+5. When a deal triggers a notification (new deal, price drop), handlers check pref.PushEnabled and send push via IPushSender
+6. Service worker receives push event, shows notification, opens deal URL on click
+
+### Subscription Pruning
+
+When IPushSender.SendAsync receives a 410 Gone or 404 response, it returns alse. The calling handler removes the dead subscription from the database. Transient errors are logged but the subscription is kept.
+
+### Configuration
+
+```json
+"Vapid": {
+  "Subject": "mailto:deals@yourdomain.com",
+  "PublicKey": "BPgrp...",
+  "PrivateKey": "iMyH-..."
+}
+```
+
+Generate new keys via WebPush.VapidHelper.GenerateVapidKeys(). The public key is exposed at GET /api/push/vapid-key (unauthenticated, needed by the browser).
+
+### API Endpoints
+
+| Method | Path | Auth | Purpose |
+|--------|------|------|---------|
+| GET | /api/push/vapid-key | No | Returns VAPID public key for browser subscription |
+| POST | /api/push/subscribe | Yes | Stores push subscription, enables push pref |
+| POST | /api/push/unsubscribe | Yes | Removes subscription, disables push pref if none remain |
+
+### Limitations
+
+- Web Push only — no FCM/APNs. Covers modern desktop browsers + Android Chrome.
+- Push is instant-only — not included in daily digest batching.
+- One service worker per origin — if multiple features need SW, merge into one file.
+
+## 15. Deal Score
 
 A composite quality score (0–100) shown as a badge on every deal card and detail page.
 
@@ -765,7 +812,7 @@ A composite quality score (0–100) shown as a badge on every deal card and deta
 
 ---
 
-## 15. Database
+## 16. Database
 
 ### Connection String
 
@@ -785,7 +832,8 @@ In Docker Compose production: `Host=postgres` (service name).
 | `affiliate_networks` | `id`, `tenant_id`, `retailer_domain`, `affiliate_tag`, `url_template` | URL rewriting rules |
 | `app_users` | `id`, `email`, `display_name`, `reputation_score` | Domain user entity |
 | `watchlist_entries` | `id`, `user_id`, `tenant_id`, `category_id`, `product_keyword`, `target_price` | User watchlist |
-| `notification_preferences` | `id`, `user_id`, `tenant_id`, `frequency` | Per-user email settings |
+| `notification_preferences` | `id`, `user_id`, `tenant_id`, `frequency`, `push_enabled` | Per-user notification settings |
+| `push_subscriptions` | `id`, `user_id`, `tenant_id`, `endpoint`, `p256dh`, `auth` | Browser push subscription keys |
 | `price_snapshots` | `id`, `deal_id`, `price`, `original_price`, `currency`, `source`, `recorded_at_utc` | Price history tracking |
 
 Plus ASP.NET Core Identity tables: `AspNetUsers`, `AspNetRoles`, etc.
@@ -820,7 +868,7 @@ dotnet ef database update \
 
 ---
 
-## 16. Environment Configuration
+## 17. Environment Configuration
 
 All secrets are loaded from environment variables. Never commit secrets to source control.
 
@@ -848,7 +896,7 @@ cp .env.example .env
 
 ---
 
-## 17. Local Development Setup
+## 18. Local Development Setup
 
 ### Prerequisites
 
@@ -899,7 +947,7 @@ Insert tenant rows with `domain = 'tech.localhost'` and browse to `https://tech.
 
 ---
 
-## 18. Production Deployment
+## 19. Production Deployment
 
 ### Infrastructure
 
@@ -959,7 +1007,7 @@ docker compose -f docker/docker-compose.yml up -d web
 
 ---
 
-## 19. Adding a New Tenant
+## 20. Adding a New Tenant
 
 No code change or redeployment is required. Insert a row and add a DNS record.
 
@@ -998,7 +1046,7 @@ VALUES
 
 ---
 
-## 20. Adding Affiliate Networks
+## 21. Adding Affiliate Networks
 
 ```sql
 -- Amazon Associates (works across all Amazon product pages)
@@ -1030,7 +1078,7 @@ VALUES (
 
 ---
 
-## 21. Testing
+## 22. Testing
 
 ### Test Projects
 
@@ -1081,7 +1129,7 @@ public async Task Handle_WhenCategoryBelongsToDifferentTenant_ShouldReturnFailur
 
 ---
 
-## 22. Monetization Strategy
+## 23. Monetization Strategy
 
 ### Tier 1 — Affiliate Commissions (Live from Day 1)
 
@@ -1116,7 +1164,7 @@ Once you have an established audience, brands pay for featured placement at the 
 
 ---
 
-## 23. Development Roadmap
+## 24. Development Roadmap
 
 ### Phase 1 — MVP (Current)
 - [x] Multi-tenant Blazor SSR shell
@@ -1152,11 +1200,11 @@ Once you have an established audience, brands pay for featured placement at the 
 - [ ] Price history — Keepa API for Amazon products (price scraping job)
 - [ ] Price history — custom HTTP scraper for niche retailers
 - [ ] Full Deal Score incorporating price history signal
-- [ ] Browser push notifications (Web Push / VAPID)
+- [x] Browser push notifications (Web Push / VAPID)
 
 ---
 
-## 24. Key Architectural Decisions
+## 25. Key Architectural Decisions
 
 These decisions were made deliberately during the design phase. Understanding the reasoning helps when extending the system.
 

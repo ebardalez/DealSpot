@@ -395,6 +395,56 @@ namespace DealSpot.Infrastructure.Persistence.Migrations
                     b.ToTable("pending_alerts", (string)null);
                 });
 
+            modelBuilder.Entity("DealSpot.Domain.Users.PushSubscription", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<string>("Auth")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)")
+                        .HasColumnName("auth");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at_utc");
+
+                    b.Property<string>("Endpoint")
+                        .IsRequired()
+                        .HasMaxLength(2048)
+                        .HasColumnType("character varying(2048)")
+                        .HasColumnName("endpoint");
+
+                    b.Property<string>("P256dh")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)")
+                        .HasColumnName("p256dh");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("tenant_id");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("user_id");
+
+                    b.HasKey("Id")
+                        .HasName("pk_push_subscriptions");
+
+                    b.HasIndex("Endpoint")
+                        .IsUnique()
+                        .HasDatabaseName("ix_push_subscriptions_endpoint");
+
+                    b.HasIndex("UserId", "TenantId")
+                        .HasDatabaseName("ix_push_subscriptions_user_id_tenant_id");
+
+                    b.ToTable("push_subscriptions", (string)null);
+                });
+
             modelBuilder.Entity("DealSpot.Domain.Users.User", b =>
                 {
                     b.Property<Guid>("Id")
@@ -459,6 +509,10 @@ namespace DealSpot.Infrastructure.Persistence.Migrations
                     b.Property<bool>("NewDealInCategory")
                         .HasColumnType("boolean")
                         .HasColumnName("new_deal_in_category");
+
+                    b.Property<bool>("PushEnabled")
+                        .HasColumnType("boolean")
+                        .HasColumnName("push_enabled");
 
                     b.Property<Guid>("TenantId")
                         .HasColumnType("uuid")

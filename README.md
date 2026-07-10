@@ -15,7 +15,7 @@ src/
   DealSpot.ServiceDefaults/   # Shared telemetry, health checks, service discovery
 tests/
   DealSpot.Domain.Tests/      # 10 domain unit tests
-  DealSpot.Application.Tests/ # 52 application unit tests
+  DealSpot.Application.Tests/ # 54 application unit tests
 specs/                        # Feature specs (one per feature)
 docker/
   Dockerfile
@@ -31,6 +31,7 @@ docker/
 | ORM | EF Core 10 + Dapper (reads) |
 | Background Jobs | Hangfire |
 | Email | Resend |
+| Push Notifications | WebPush NuGet (VAPID) |
 | Auth | ASP.NET Core Identity + Google OAuth |
 | Caching | Redis (Output Cache via Aspire) |
 | Local Orchestration | .NET Aspire 13 |
@@ -162,7 +163,7 @@ dotnet test tests/DealSpot.Application.Tests
 dotnet test tests/DealSpot.Domain.Tests
 ```
 
-62 tests total (52 application + 10 domain). xUnit + NSubstitute + FluentAssertions.
+64 tests total (54 application + 10 domain). xUnit + NSubstitute + FluentAssertions.
 
 ## Features
 
@@ -190,9 +191,9 @@ dotnet test tests/DealSpot.Domain.Tests
 - [x] Deal Score calculation (discount % + retailer trust + vote velocity)
 - [x] AdSense integration
 
-### Phase 3 -- Intelligence (in progress)
+### Phase 3 -- Intelligence (complete)
 - [x] Price history tracking + admin price update UI + bar chart on deal detail
 - [x] Price drop alerts (watchlist + price change triggers)
 - [x] Community deal submissions + approval queue (`/submit` + admin approve/reject)
 - [x] User reputation system — +10 approve, -2 reject, ±1 vote, -3 expire; auto-approve at ≥50 rep
-- [ ] Web push notifications (VAPID)
+- [x] Web push notifications (VAPID) — service worker, push toggle, 410 subscription pruning

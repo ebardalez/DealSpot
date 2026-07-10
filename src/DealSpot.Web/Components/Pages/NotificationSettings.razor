@@ -3,8 +3,10 @@
 @using DealSpot.Domain.Users
 @using MediatR
 @using Microsoft.AspNetCore.Authorization
+@using Microsoft.JSInterop
 @attribute [Authorize]
 @inject ISender Mediator
+@inject IJSRuntime JS
 @rendermode InteractiveServer
 
 <PageTitle>Notification Settings</PageTitle>
@@ -52,6 +54,33 @@
             <span>Daily digest — one email per day</span>
         </label>
 
+        @if (_pushSupported)
+        {
+            <h2>Browser Push Notifications</h2>
+
+            <label class="setting-toggle">
+                <input type="checkbox" checked="@_pushEnabled"
+                       @onchange="TogglePushAsync" />
+                <span>Enable browser push notifications</span>
+            </label>
+
+            @if (_pushError is not null)
+            {
+                <div class="alert alert-warning">@_pushError</div>
+            }
+
+            <p class="setting-hint">
+                @if (_pushEnabled)
+                {
+                    <text>Push notifications are active on this browser.</text>
+                }
+                else
+                {
+                    <text>Get instant alerts even when DealSpot isn't open.</text>
+                }
+            </p>
+        }
+
         <button class="btn-save" @onclick="SaveAsync" disabled="@_saving">
             @(_saving ? "Saving..." : "Save Settings")
         </button>
@@ -70,6 +99,9 @@ else
     private bool _newDealInCategory;
     private bool _watchlistMatch;
     private bool _dealExpiringSoon;
+    private bool _pushEnabled;
+    private bool _pushSupported;
+    private string? _pushError;
     private NotificationFrequency _frequency;
 
     protected override async Task OnInitializedAsync()
@@ -80,9 +112,53 @@ else
             _newDealInCategory = result.Value.NewDealInCategory;
             _watchlistMatch = result.Value.WatchlistMatch;
             _dealExpiringSoon = result.Value.DealExpiringSoon;
+            _pushEnabled = result.Value.PushEnabled;
             _frequency = result.Value.Frequency;
         }
         _loaded = true;
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            _pushSupported = await JS.InvokeAsync<bool>("dealspotPush.isSupported");
+            if (_pushSupported)
+            {
+                var browserSubscribed = await JS.InvokeAsync<bool>("dealspotPush.isSubscribed");
+                // Sync UI with actual browser state
+                if (_pushEnabled && !browserSubscribed)
+                    _pushEnabled = false;
+            }
+            StateHasChanged();
+        }
+    }
+
+    private async Task TogglePushAsync(ChangeEventArgs e)
+    {
+        _pushError = null;
+        var wantEnabled = (bool)(e.Value ?? false);
+
+        try
+        {
+            if (wantEnabled)
+            {
+                var success = await JS.InvokeAsync<bool>("dealspotPush.subscribe");
+                _pushEnabled = success;
+                if (!success)
+                    _pushError = "Could not enable push notifications. Please allow notifications when prompted.";
+            }
+            else
+            {
+                await JS.InvokeAsync<bool>("dealspotPush.unsubscribe");
+                _pushEnabled = false;
+            }
+        }
+        catch
+        {
+            _pushError = "An error occurred managing push notifications.";
+            _pushEnabled = false;
+        }
     }
 
     private async Task SaveAsync()
@@ -90,7 +166,7 @@ else
         _saving = true;
         _saved = false;
         var result = await Mediator.Send(new UpdatePreferencesCommand(
-            _newDealInCategory, _watchlistMatch, _dealExpiringSoon, _frequency));
+            _newDealInCategory, _watchlistMatch, _dealExpiringSoon, _pushEnabled, _frequency));
         _saved = result.IsSuccess;
         _saving = false;
     }
