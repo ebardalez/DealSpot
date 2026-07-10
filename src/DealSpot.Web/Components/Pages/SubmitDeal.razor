@@ -4,10 +4,12 @@
 @using DealSpot.Application.Categories.GetCategories
 @using DealSpot.Application.Deals.CreateDeal
 @using DealSpot.Domain.Deals
+@using DealSpot.Domain.Users
 @using MediatR
 @inject ISender Mediator
 @inject ITenantContext TenantContext
 @inject ICurrentUser CurrentUser
+@inject IUserRepository UserRepository
 @attribute [Authorize]
 @rendermode InteractiveServer
 
@@ -15,12 +17,33 @@
 
 <section class="page-section">
     <h1>Submit a Deal</h1>
-    <p>Share a deal with the community. It will be reviewed by our team before going live.</p>
+
+    @if (_user is not null)
+    {
+        <p style="font-size:0.9rem;color:#666">
+            Your reputation: <strong>⭐ @_user.ReputationScore</strong>
+            @if (_user.CanAutoApprove)
+            {
+                <span> — Trusted submitter (auto-approved)</span>
+            }
+            else
+            {
+                <span> — Submissions require approval</span>
+            }
+        </p>
+    }
 
     @if (_success)
     {
         <div class="alert alert--success">
-            <p>Thanks! Your deal has been submitted and is awaiting approval.</p>
+            @if (_autoApproved)
+            {
+                <p>Your deal is live! (Auto-approved based on your reputation.)</p>
+            }
+            else
+            {
+                <p>Thanks! Your deal has been submitted and is awaiting approval.</p>
+            }
             <button class="btn btn--secondary" @onclick="Reset">Submit Another</button>
         </div>
     }
@@ -98,7 +121,9 @@
 @code {
     private DealFormModel _model = new();
     private IReadOnlyList<CategoryDto>? _categories;
+    private User? _user;
     private bool _success;
+    private bool _autoApproved;
     private string? _error;
     private bool _submitting;
 
@@ -106,6 +131,9 @@
     {
         var result = await Mediator.Send(new GetCategoriesQuery(TenantContext.Current.Id));
         if (result.IsSuccess) _categories = result.Value;
+
+        if (CurrentUser.UserId.HasValue)
+            _user = await UserRepository.GetByIdAsync(CurrentUser.UserId.Value);
     }
 
     private async Task SubmitAsync()
@@ -130,9 +158,14 @@
         var result = await Mediator.Send(command);
 
         if (result.IsSuccess)
+        {
             _success = true;
+            _autoApproved = _user?.CanAutoApprove == true;
+        }
         else
+        {
             _error = result.Error.Description;
+        }
 
         _submitting = false;
     }
@@ -141,6 +174,7 @@
     {
         _model = new();
         _success = false;
+        _autoApproved = false;
         _error = null;
     }
 

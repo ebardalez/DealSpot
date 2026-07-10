@@ -5,11 +5,13 @@
 @using DealSpot.Application.Deals.RejectDeal
 @using DealSpot.Domain.Categories
 @using DealSpot.Domain.Deals
+@using DealSpot.Domain.Users
 @using MediatR
 @inject ISender Mediator
 @inject ITenantContext TenantContext
 @inject IDealRepository DealRepository
 @inject ICategoryRepository CategoryRepository
+@inject IUserRepository UserRepository
 @attribute [Authorize(Policy = "Admin")]
 @rendermode InteractiveServer
 
@@ -28,6 +30,7 @@
                     <th>Title</th>
                     <th>Category</th>
                     <th>Price</th>
+                    <th>Submitter</th>
                     <th>Submitted</th>
                     <th>Actions</th>
                 </tr>
@@ -39,6 +42,17 @@
                         <td>@deal.Title</td>
                         <td>@(_categoryMap.TryGetValue(deal.CategoryId, out var name) ? name : "—")</td>
                         <td>@deal.Price.CurrentPrice.ToString("C")</td>
+                        <td>
+                            @if (deal.SubmittedByUserId.HasValue && _userMap.TryGetValue(deal.SubmittedByUserId.Value, out var u))
+                            {
+                                <span>@u.Name</span>
+                                <span class="rep-badge" title="Reputation">⭐ @u.Rep</span>
+                            }
+                            else
+                            {
+                                <span>—</span>
+                            }
+                        </td>
                         <td>@deal.CreatedAtUtc.ToString("yyyy-MM-dd")</td>
                         <td>
                             <button class="btn btn--primary btn--sm" @onclick="() => ApproveAsync(deal.Id)">Approve</button>
@@ -108,6 +122,7 @@
     private IReadOnlyList<Deal>? _deals;
     private IReadOnlyList<Deal>? _pending;
     private Dictionary<Guid, string> _categoryMap = [];
+    private Dictionary<Guid, (string Name, int Rep)> _userMap = [];
 
     protected override async Task OnInitializedAsync()
     {
@@ -120,6 +135,21 @@
         _pending = await DealRepository.GetPendingByTenantAsync(TenantContext.Current.Id);
         var categories = await CategoryRepository.GetByTenantAsync(TenantContext.Current.Id);
         _categoryMap = categories.ToDictionary(c => c.Id, c => c.Name);
+
+        // ponytail: load submitter info for pending deals only
+        _userMap = [];
+        if (_pending is not null)
+        {
+            foreach (var deal in _pending.Where(d => d.SubmittedByUserId.HasValue))
+            {
+                if (!_userMap.ContainsKey(deal.SubmittedByUserId!.Value))
+                {
+                    var user = await UserRepository.GetByIdAsync(deal.SubmittedByUserId.Value);
+                    if (user is not null)
+                        _userMap[user.Id] = (user.DisplayName, user.ReputationScore);
+                }
+            }
+        }
     }
 
     private async Task ApproveAsync(Guid dealId)

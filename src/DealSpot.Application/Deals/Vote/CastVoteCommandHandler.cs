@@ -2,7 +2,9 @@ using DealSpot.Application.Abstractions.Authentication;
 using DealSpot.Application.Abstractions.Messaging;
 using DealSpot.Domain.Abstractions;
 using DealSpot.Domain.Deals;
+using DealSpot.Domain.Users;
 using FluentValidation;
+using Microsoft.Extensions.Logging;
 
 namespace DealSpot.Application.Deals.Vote;
 
@@ -22,8 +24,10 @@ public sealed class CastVoteCommandValidator : AbstractValidator<CastVoteCommand
 public sealed class CastVoteCommandHandler(
     IDealRepository dealRepository,
     IDealVoteRepository dealVoteRepository,
+    IUserRepository userRepository,
     ICurrentUser currentUser,
-    IUnitOfWork unitOfWork) : ICommandHandler<CastVoteCommand, CastVoteResponse>
+    IUnitOfWork unitOfWork,
+    ILogger<CastVoteCommandHandler> logger) : ICommandHandler<CastVoteCommand, CastVoteResponse>
 {
     public async Task<Result<CastVoteResponse>> Handle(CastVoteCommand command, CancellationToken cancellationToken)
     {
@@ -34,6 +38,7 @@ public sealed class CastVoteCommandHandler(
             return Result.Failure<CastVoteResponse>(DealErrors.NotFound);
 
         var existing = await dealVoteRepository.GetAsync(command.DealId, userId, cancellationToken);
+        int repDelta = 0;
 
         if (existing is null)
         {
@@ -41,6 +46,7 @@ public sealed class CastVoteCommandHandler(
             var vote = DealVote.Create(command.DealId, userId, command.Value);
             dealVoteRepository.Add(vote);
             deal.ApplyVote(command.Value);
+            repDelta = command.Value; // +1 or -1
         }
         else if (existing.Value == command.Value)
         {
@@ -49,14 +55,34 @@ public sealed class CastVoteCommandHandler(
         }
         else
         {
-            // Flip: remove old, apply new
+            // Flip: remove old, apply new → net delta is 2× the new value
             deal.RemoveVote(existing.Value);
             existing.Flip();
             dealVoteRepository.Update(existing);
             deal.ApplyVote(existing.Value);
+            repDelta = existing.Value * 2; // +2 or -2
         }
 
         dealRepository.Update(deal);
+
+        // ponytail: rep change inline, skip self-votes
+        if (repDelta != 0 && deal.SubmittedByUserId is not null && deal.SubmittedByUserId.Value != userId)
+        {
+            try
+            {
+                var submitter = await userRepository.GetByIdAsync(deal.SubmittedByUserId.Value, cancellationToken);
+                if (submitter is not null)
+                {
+                    submitter.AddReputation(repDelta);
+                    userRepository.Update(submitter);
+                }
+            }
+            catch (Exception ex)
+            {
+                logger.LogWarning(ex, "Failed to update reputation on vote for deal {DealId}", command.DealId);
+            }
+        }
+
         await unitOfWork.SaveChangesAsync(cancellationToken);
 
         return new CastVoteResponse(deal.UpVoteCount, deal.DownVoteCount, deal.NetScore, command.Value);

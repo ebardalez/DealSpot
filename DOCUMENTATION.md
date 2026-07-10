@@ -243,7 +243,9 @@ Tenant-scoped category tree. Each tenant has a completely independent category t
 Shared across tenants — one account works on all your niche sites.
 
 - `Email`, `DisplayName`, `AvatarUrl`
-- `ReputationScore` — future reputation system seed
+- `ReputationScore` — community reputation (≥0, clamped). Earned by approved submissions (+10), received upvotes (+1), lost on rejections (-2), downvotes (-1), and deal expirations (-3)
+- `CanAutoApprove` — computed: `true` when `ReputationScore >= 50`. Trusted users' submissions bypass the approval queue
+- `DailySubmissionLimit` — computed: 1 (default), 3 (≥10 rep), 5 (≥50 rep), 10 (≥100 rep)
 - Uses ASP.NET Core Identity for authentication; this entity holds deal-site-specific user data
 
 ### Entity: WatchlistEntry
@@ -296,6 +298,9 @@ All use cases live in `DealSpot.Application` as MediatR commands and queries. Th
 | `CreateDealCommand` | `CreateDealCommandHandler` | Validates category ownership, rewrites affiliate URL, generates slug, persists deal |
 | `ReportDealExpiredCommand` | `ReportDealExpiredCommandHandler` | Increments expired report count; auto-expires at 5 reports |
 | `UpdateDealPriceCommand` | `UpdateDealPriceCommandHandler` | Updates deal price, raises `DealPriceChangedDomainEvent` |
+| `ApproveDealCommand` | `ApproveDealCommandHandler` | Approves a pending community submission, triggers `DealCreatedDomainEvent` |
+| `RejectDealCommand` | `RejectDealCommandHandler` | Rejects a pending submission, deducts -2 reputation from submitter |
+| `CastVoteCommand` | `CastVoteCommandHandler` | Upvote/downvote a deal; adjusts submitter reputation (±1, skips self-votes) |
 
 ### Queries
 
@@ -1142,11 +1147,11 @@ Once you have an established audience, brands pay for featured placement at the 
 ### Phase 3 — Intelligence (in progress)
 - [x] Price history — admin price updates recorded as snapshots, bar chart on deal detail
 - [x] Price drop alerts — watchlist + price change triggers, instant + digest delivery
+- [x] Community deal submissions with approval queue
+- [x] User reputation system — event-driven rep changes, auto-approve for trusted users (≥50 rep)
 - [ ] Price history — Keepa API for Amazon products (price scraping job)
 - [ ] Price history — custom HTTP scraper for niche retailers
 - [ ] Full Deal Score incorporating price history signal
-- [ ] Community deal submissions with approval queue
-- [ ] User reputation system
 - [ ] Browser push notifications (Web Push / VAPID)
 
 ---

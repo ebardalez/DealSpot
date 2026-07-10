@@ -23,6 +23,17 @@ public sealed class User : Entity
     public DateTime CreatedAtUtc { get; private set; }
     public int ReputationScore { get; private set; }
 
+    // ponytail: computed props, no persistence needed
+    public bool CanAutoApprove => ReputationScore >= 50;
+
+    public int DailySubmissionLimit => ReputationScore switch
+    {
+        >= 100 => 10,
+        >= 50 => 5,
+        >= 10 => 3,
+        _ => 1
+    };
+
     public static Result<User> Create(string email, string displayName, string? avatarUrl = null)
     {
         if (string.IsNullOrWhiteSpace(email))

@@ -15,7 +15,7 @@ src/
   DealSpot.ServiceDefaults/   # Shared telemetry, health checks, service discovery
 tests/
   DealSpot.Domain.Tests/      # 10 domain unit tests
-  DealSpot.Application.Tests/ # ~35 application unit tests
+  DealSpot.Application.Tests/ # 52 application unit tests
 specs/                        # Feature specs (one per feature)
 docker/
   Dockerfile
@@ -98,26 +98,13 @@ To **add a new migration** (after changing entities/configurations):
 
 The next app startup will apply it automatically.
 
-**4. Seed a dev tenant**
+**4. Seed data loads automatically**
 
-Open pgAdmin (link in Aspire dashboard) and run:
+`SeedDevelopmentData.cs` runs on first startup in Development mode. It creates a "TechDeals" tenant (domain: `localhost`), 6 categories, 3 users, 11 deals, votes, watchlist entries, price snapshots, and notification preferences. Skips automatically if tenants already exist.
 
-```sql
-INSERT INTO tenants (id, slug, name, domain, is_active, created_at_utc, branding)
-VALUES (
-  'a0000000-0000-0000-0000-000000000001',
-  'localhost',
-  'DealSpot Dev',
-  'localhost',
-  true,
-  NOW(),
-  '{"PrimaryColor":"#3B82F6","SecondaryColor":"#1E40AF","LogoUrl":"","FaviconUrl":"","MetaDescription":"DealSpot Dev","MetaKeywords":"deals"}'
-);
-```
+To reset: drop the database (`docker rm -f <pg-container>` and remove the volume) and restart.
 
-**5. Start the AppHost and browse to the app URL shown in the dashboard.**
-
-Migrations will be applied automatically on first startup.
+**5. Start the AppHost and browse to the app URL shown in the Aspire dashboard.**
 
 ---
 
@@ -175,7 +162,7 @@ dotnet test tests/DealSpot.Application.Tests
 dotnet test tests/DealSpot.Domain.Tests
 ```
 
-~45 tests total (~35 application + 10 domain). xUnit + NSubstitute + FluentAssertions.
+62 tests total (52 application + 10 domain). xUnit + NSubstitute + FluentAssertions.
 
 ## Features
 
@@ -206,6 +193,6 @@ dotnet test tests/DealSpot.Domain.Tests
 ### Phase 3 -- Intelligence (in progress)
 - [x] Price history tracking + admin price update UI + bar chart on deal detail
 - [x] Price drop alerts (watchlist + price change triggers)
-- [ ] Community deal submissions + approval queue
-- [ ] User reputation system (vote + submission based)
-- [ ] Web push notifications
+- [x] Community deal submissions + approval queue (`/submit` + admin approve/reject)
+- [x] User reputation system — +10 approve, -2 reject, ±1 vote, -3 expire; auto-approve at ≥50 rep
+- [ ] Web push notifications (VAPID)

@@ -12,4 +12,6 @@ public sealed class UserRepository(ApplicationDbContext dbContext) : IUserReposi
         await dbContext.AppUsers.FirstOrDefaultAsync(u => u.Email == email, cancellationToken);
 
     public void Add(User user) => dbContext.AppUsers.Add(user);
+
+    public void Update(User user) => dbContext.AppUsers.Update(user);
 }

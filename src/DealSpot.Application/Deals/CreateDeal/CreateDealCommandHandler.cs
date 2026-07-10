@@ -4,6 +4,7 @@ using DealSpot.Domain.Abstractions;
 using DealSpot.Domain.Categories;
 using DealSpot.Domain.Deals;
 using DealSpot.Domain.Deals.ValueObjects;
+using DealSpot.Domain.Users;
 
 namespace DealSpot.Application.Deals.CreateDeal;
 
@@ -19,6 +20,7 @@ public sealed record CreateDealResponse(Guid DealId, string Slug, string Affilia
 public sealed class CreateDealCommandHandler(
     IDealRepository dealRepository,
     ICategoryRepository categoryRepository,
+    IUserRepository userRepository,
     IAffiliateUrlRewriter affiliateUrlRewriter,
     IUnitOfWork unitOfWork) : ICommandHandler<CreateDealCommand, CreateDealResponse>
 {
@@ -32,12 +34,21 @@ public sealed class CreateDealCommandHandler(
         var slug = GenerateSlug(command.Title, command.CurrentPrice);
         var price = new DealPrice(command.CurrentPrice, command.OriginalPrice, command.Currency);
 
+        // ponytail: auto-approve for trusted users (rep ≥ 50)
+        var effectiveStatus = command.InitialStatus;
+        if (effectiveStatus == DealStatus.PendingApproval && command.SubmittedByUserId is not null)
+        {
+            var user = await userRepository.GetByIdAsync(command.SubmittedByUserId.Value, cancellationToken);
+            if (user?.CanAutoApprove == true)
+                effectiveStatus = DealStatus.Active;
+        }
+
         var dealResult = Deal.Create(
             command.TenantId, command.CategoryId, command.SubmittedByUserId,
             command.Title, slug, command.Description, price,
             rewriteResult.CanonicalUrl, rewriteResult.AffiliateUrl,
             command.ImageUrl, command.RetailerName,
-            command.InitialStatus);
+            effectiveStatus);
 
         if (dealResult.IsFailure)
             return Result.Failure<CreateDealResponse>(dealResult.Error);
