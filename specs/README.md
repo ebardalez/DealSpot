@@ -42,6 +42,7 @@ Docs (`DOCUMENTATION.md` §23) drift from code. Actual state:
 | 12 | Community submissions & approval | 3 | 01, 07 | ✅ Done |
 | 13 | User reputation | 3 | 04, 12 | ✅ Done |
 | 14 | Web push notifications | 3 | 01, 03 | ✅ Done |
+| 15 | UI overhaul & responsive | 4 | — | ✅ Done |
 
 ## Conventions (match existing code)
 

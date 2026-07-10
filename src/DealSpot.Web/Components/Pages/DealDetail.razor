@@ -5,10 +5,14 @@
 @using MediatR
 @inject ITenantContext TenantContext
 @inject ISender Mediator
-@inject NavigationManager Nav
 @attribute [Microsoft.AspNetCore.OutputCaching.OutputCache(PolicyName = "DealPage")]
 
-@if (_deal is null)
+@if (_notFound)
+{
+    <PageTitle>Deal Not Found</PageTitle>
+    <p class="empty-state">This deal doesn't exist or has been removed.</p>
+}
+else if (_deal is null)
 {
     <p>Loading...</p>
 }
@@ -138,6 +142,7 @@ else
 @code {
     [Parameter] public string Slug { get; set; } = string.Empty;
 
+    private bool _notFound;
     private DealSummaryDto? _deal;
     private IReadOnlyList<PriceSnapshotDto>? _priceHistory;
 
@@ -149,7 +154,7 @@ else
 
         if (_deal is null)
         {
-            Nav.NavigateTo("/404", replace: true);
+            _notFound = true;
             return;
         }
 

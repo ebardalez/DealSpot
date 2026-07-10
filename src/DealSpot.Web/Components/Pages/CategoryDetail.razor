@@ -7,10 +7,14 @@
 @inject ITenantContext TenantContext
 @inject ISender Mediator
 @inject ICategoryRepository CategoryRepository
-@inject NavigationManager Nav
 @attribute [Microsoft.AspNetCore.OutputCaching.OutputCache(PolicyName = "CategoryPage")]
 
-@if (_category is null)
+@if (_notFound)
+{
+    <PageTitle>Category Not Found</PageTitle>
+    <p class="empty-state">This category doesn't exist.</p>
+}
+else if (_category is null)
 {
     <p>Loading...</p>
 }
@@ -63,6 +67,7 @@ else
 @code {
     [Parameter] public string CategorySlug { get; set; } = string.Empty;
 
+    private bool _notFound;
     private Category? _category;
     private GetDealsResponse? _deals;
 
@@ -71,7 +76,7 @@ else
         _category = await CategoryRepository.GetBySlugAsync(TenantContext.Current.Id, CategorySlug);
         if (_category is null)
         {
-            Nav.NavigateTo("/404", replace: true);
+            _notFound = true;
             return;
         }
 

@@ -32,15 +32,10 @@
     private int? _userVote;
     private bool _loading;
 
-    protected override async Task OnInitializedAsync()
+    protected override void OnInitialized()
     {
         _netScore = InitialNetScore;
-        var result = await Mediator.Send(new GetDealVoteQuery(DealId));
-        if (result.IsSuccess)
-        {
-            _netScore = result.Value.NetScore;
-            _userVote = result.Value.UserVote;
-        }
+        // ponytail: defer user vote query to first interaction. Avoids N concurrent DbContext hits when page has many VoteButtons.
     }
 
     private async Task VoteAsync(int value)

@@ -113,7 +113,6 @@ if (!app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
-app.UseStaticFiles();
 app.UseSerilogRequestLogging();
 
 // Tenant resolution must run before auth and routing
@@ -130,6 +129,7 @@ app.UseHangfireDashboard("/admin/jobs", new DashboardOptions
     Authorization = [new HangfireAdminAuthFilter()]
 });
 
+app.MapStaticAssets();
 app.MapRazorComponents<DealSpot.Web.Components.App>()
     .AddInteractiveServerRenderMode();
 

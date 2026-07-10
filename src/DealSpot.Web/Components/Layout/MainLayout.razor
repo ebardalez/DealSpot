@@ -11,16 +11,20 @@
                 <img src="@TenantContext.Current.Branding.LogoUrl" alt="@TenantContext.Current.Name" />
             </a>
 
+            <input type="checkbox" id="nav-toggle" class="nav-toggle" aria-hidden="true" />
+            <label for="nav-toggle" class="nav-toggle-label" aria-label="Toggle navigation">&#9776;</label>
+
             <div class="nav-links">
-                <a href="/deals">All Deals</a>
+                <a href="/">Deals</a>
                 <a href="/categories">Categories</a>
+                <a href="/submit">Submit</a>
             </div>
 
             <div class="nav-auth">
                 <AuthorizeView>
                     <Authorized>
                         <span class="nav-user-name">@context.User.Identity?.Name</span>
-                        <a href="/watchlist">My Watchlist</a>
+                        <a href="/watchlist">Watchlist</a>
                         <a href="/settings/notifications">Settings</a>
                         <AuthorizeView Policy="Admin">
                             <Authorized Context="adminContext">
