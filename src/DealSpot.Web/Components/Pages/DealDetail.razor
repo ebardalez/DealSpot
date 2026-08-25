@@ -109,21 +109,25 @@ else
 
                 @if (_priceHistory is not null && _priceHistory.Count > 1)
                 {
-                    <div class="price-history" style="margin-top:1.5rem">
+                    <div class="price-history">
                         <h3>Price History</h3>
-                        @{ var maxPrice = _priceHistory.Max(p => p.Price); }
-                        <div style="display:flex;align-items:flex-end;gap:4px;height:80px;margin:0.5rem 0">
+                        @{
+                            var maxPrice = _priceHistory.Max(p => p.Price);
+                            var minPrice = _priceHistory.Min(p => p.Price);
+                        }
+                        <div class="ph-chart">
                             @foreach (var snapshot in _priceHistory)
                             {
                                 var pct = maxPrice > 0 ? (int)(snapshot.Price / maxPrice * 100) : 0;
-                                <div style="flex:1;display:flex;flex-direction:column;align-items:center;min-width:0" title="@snapshot.Price.ToString("C") on @snapshot.RecordedAtUtc.ToString("MMM d")">
-                                    <div style="width:100%;max-width:40px;background:var(--color-primary,#3b82f6);border-radius:3px 3px 0 0;height:@(pct)%"></div>
-                                    <span style="font-size:0.6rem;color:#888;margin-top:2px;white-space:nowrap">@snapshot.RecordedAtUtc.ToString("M/d")</span>
+                                var isLow = snapshot.Price == minPrice;
+                                <div class="ph-col" title="@snapshot.Price.ToString("C") on @snapshot.RecordedAtUtc.ToString("MMM d")">
+                                    <div class="ph-bar @(isLow ? "ph-bar--low" : "")" style="height:@(pct)%"></div>
+                                    <span class="ph-label">@snapshot.RecordedAtUtc.ToString("M/d")</span>
                                 </div>
                             }
                         </div>
-                        <p style="font-size:0.85rem;color:#666">
-                            Low: <strong>@_priceHistory.Min(p => p.Price).ToString("C")</strong>
+                        <p class="ph-legend">
+                            Low: <strong>@minPrice.ToString("C")</strong>
                             &middot; High: <strong>@maxPrice.ToString("C")</strong>
                         </p>
                     </div>

@@ -30,7 +30,9 @@
             @foreach (var category in _categories)
             {
                 <a href="/categories/@category.Slug" class="category-card">
-                    <h2>@category.Name</h2>
+                    <span class="category-card__mono" aria-hidden="true">@GetInitial(category.Name)</span>
+                    <h2 class="category-card__name">@category.Name</h2>
+                    <span class="category-card__arrow" aria-hidden="true">&rarr;</span>
                 </a>
             }
         </div>
@@ -39,6 +41,9 @@
 
 @code {
     private IReadOnlyList<CategoryDto>? _categories;
+
+    private static string GetInitial(string name) =>
+        string.IsNullOrWhiteSpace(name) ? "#" : name.TrimStart()[0].ToString().ToUpperInvariant();
 
     protected override async Task OnInitializedAsync()
     {
