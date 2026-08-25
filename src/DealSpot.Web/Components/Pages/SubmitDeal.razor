@@ -20,15 +20,15 @@
 
     @if (_user is not null)
     {
-        <p style="font-size:0.9rem;color:#666">
-            Your reputation: <strong>⭐ @_user.ReputationScore</strong>
+        <p class="rep-line">
+            Your reputation: <span class="rep-badge">@_user.ReputationScore</span>
             @if (_user.CanAutoApprove)
             {
-                <span> — Trusted submitter (auto-approved)</span>
+                <span class="rep-badge rep-badge--trusted">Trusted submitter · auto-approved</span>
             }
             else
             {
-                <span> — Submissions require approval</span>
+                <span>Submissions require approval</span>
             }
         </p>
     }

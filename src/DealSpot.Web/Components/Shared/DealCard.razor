@@ -1,10 +1,18 @@
 @using DealSpot.Application.Deals.GetDeals
 
 <a href="/deals/@Deal.Slug" class="deal-card">
-    @if (!string.IsNullOrEmpty(Deal.ImageUrl))
+    @{
+        var hasDiscount = Deal.OriginalPrice.HasValue && Deal.DiscountPercentage.HasValue;
+        var hasImage = !string.IsNullOrEmpty(Deal.ImageUrl);
+    }
+    @if (hasImage)
     {
         <div class="deal-card__image">
             <img src="@Deal.ImageUrl" alt="@Deal.Title" loading="lazy" />
+            @if (hasDiscount)
+            {
+                <span class="deal-card__discount">-@Deal.DiscountPercentage!.Value.ToString("F0")%</span>
+            }
         </div>
     }
 
@@ -13,10 +21,13 @@
 
         <div class="deal-card__pricing">
             <span class="price-current">@Deal.CurrentPrice.ToString("C")</span>
-            @if (Deal.OriginalPrice.HasValue && Deal.DiscountPercentage.HasValue)
+            @if (hasDiscount)
             {
-                <span class="price-original">@Deal.OriginalPrice.Value.ToString("C")</span>
-                <span class="discount-pill">@Deal.DiscountPercentage.Value.ToString("F0")% OFF</span>
+                <span class="price-original">@Deal.OriginalPrice!.Value.ToString("C")</span>
+                @if (!hasImage)
+                {
+                    <span class="discount-pill">@Deal.DiscountPercentage!.Value.ToString("F0")% OFF</span>
+                }
             }
         </div>
 

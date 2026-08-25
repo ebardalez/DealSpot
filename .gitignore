@@ -404,3 +404,4 @@ FodyWeavers.xsd
 src/DealSpot.AppHost/appsettings.Development.json
 src/DealSpot.Web/appsettings.Development.json
 HANDOFF.md
+/.okf
